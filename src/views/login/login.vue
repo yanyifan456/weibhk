@@ -11,7 +11,7 @@
       <a-form-item name="username" label-align="left">
         <a-input v-model:value="formState.username" placeholder="请输入账号" size="large">
           <template #prefix>
-            <UserOutlined class="input-icon" />
+            <UserOutlined class="input-icon"/>
           </template>
         </a-input>
       </a-form-item>
@@ -33,7 +33,7 @@
       <a-form-item name="password" label-align="left">
         <a-input-password v-model:value="formState.password" placeholder="请输入密码" size="large">
           <template #prefix>
-            <LockOutlined class="input-icon" />
+            <LockOutlined class="input-icon"/>
           </template>
         </a-input-password>
       </a-form-item>
@@ -52,11 +52,11 @@
 </template>
 
 <script setup>
-import { message } from "ant-design-vue";
+import {message} from "ant-design-vue";
 import router from "@/router/index.js";
-import { reactive, ref } from "vue";
-import { getyanzhengma, getlogin } from "@/api/yyf.js";
-import { useAuthStore } from "@/store/auth";
+import {reactive, ref} from "vue";
+import {getyanzhengma, getlogin} from "@/api/yyf.js";
+import {useAuthStore} from "@/store/auth";
 
 const authStore = useAuthStore();
 
@@ -71,16 +71,16 @@ const formState = reactive({
 });
 
 const formRules = {
-  username: [{ required: true, message: "請輸入用戶名", trigger: "blur" }],
-  password: [{ required: true, message: "請輸入密碼", trigger: "blur" }],
-  yzm: [{ required: true, message: "請輸入驗證碼", trigger: "blur" }],
+  username: [{required: true, message: "請輸入用戶名", trigger: "blur"}],
+  password: [{required: true, message: "請輸入密碼", trigger: "blur"}],
+  yzm: [{required: true, message: "請輸入驗證碼", trigger: "blur"}],
 };
 
 const handleGetCode = async () => {
   if (!formState.username) {
     return message.warning("請先輸入賬號");
   }
-  const res = await getyanzhengma({ loginName: formState.username });
+  const res = await getyanzhengma({loginName: formState.username});
   console.log(res);
   if (res.code == "200" && res.data == "验证码获取成功") {
     message.success("驗證碼已發送");
@@ -138,7 +138,8 @@ const handleLogin = async () => {
       // 加载权限（必须在进入首页前完成）
       try {
         await authStore.loadPermissions(res.data.data[0].roleId * 1);
-      } catch (error) { }
+      } catch (error) {
+      }
 
       router.push("/home");
       message.success("登入成功");
@@ -184,7 +185,7 @@ switch (prefix) {
     break;
   default:
     pageTitle.value = "信兴综合门诊部互联网医院系统";
-    roleType.value = "doctor";
+    roleType.value = "admin";
 }
 
 const open = () => {

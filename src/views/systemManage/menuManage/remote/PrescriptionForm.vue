@@ -69,9 +69,7 @@
             <div style="text-align: right; font-size: 13px;  min-width: 200px;">
                 <!-- 机构名称（hospitalName） -->
                 <div>
-                    <img style="width: 190px;height: 40px;" :src="detail.hospitalPhoto?.startsWith('data:image')
-                        ? detail.hospitalPhoto
-                        : 'data:image/png;base64,' + detail.hospitalPhoto" alt="" />
+                    <img style="width: 190px;height: 40px;" :src="detail.hospitalPhoto" alt="" />
 
                 </div>
                 <div style="font-size: 12px;  margin-bottom: 10px;">{{ detail.hospitalEnName || '' }}</div>
@@ -135,15 +133,15 @@
                         <td style="border: 1px solid ; padding: 6px;">{{ item.name || '' }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.spec || '' }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.dosageForm || ''
-                        }}</td>
+                            }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.directionsRoute ||
                             '' }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.frenquency || ''
-                        }}</td>
+                            }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.duration || '' }}
                         </td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.medicineCun || ''
-                        }}</td>
+                            }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.specialPurpose ||
                             '' }}</td>
                     </tr>

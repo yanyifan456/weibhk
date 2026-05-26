@@ -69,9 +69,8 @@
             <div style="text-align: right; font-size: 13px;  min-width: 200px;">
                 <!-- 机构名称（hospitalName） -->
                 <div>
-                    <img style="width: 190px;height: 40px;" :src="detail.hospitalPhoto?.startsWith('data:image')
-                        ? detail.hospitalPhoto
-                        : 'data:image/png;base64,' + detail.hospitalPhoto" alt="" />
+                    <img style="width: 190px;height: 40px;" :src="replaceToCurrentDomain(detail.hospitalPhoto)"
+                        alt="" />
 
                 </div>
                 <div style="font-size: 12px;  margin-bottom: 10px;">{{ detail.hospitalEnName || '' }}</div>
@@ -101,7 +100,7 @@
         <div style="margin: 10px 0 6px; font-size: 13px;">
             <span>診斷 (Diagnosis)：</span>
             <template v-if="isImageUrl(detail.consultationMedicine)">
-                <img :src="detail.consultationMedicine" alt="会诊药方" style="
+                <img :src="replaceToCurrentDomain(detail.consultationMedicine)" alt="会诊药方" style="
       max-width: 100%;
       max-height: 300px;
       object-fit: contain;
@@ -134,15 +133,15 @@
                         <td style="border: 1px solid ; padding: 6px;">{{ item.name || '' }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.spec || '' }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.dosageForm || ''
-                        }}</td>
+                            }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.directionsRoute ||
                             '' }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.frenquency || ''
-                        }}</td>
+                            }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.duration || '' }}
                         </td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.medicineCun || ''
-                        }}</td>
+                            }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.specialPurpose ||
                             '' }}</td>
                     </tr>
@@ -208,5 +207,15 @@ const emptyRows = computed(() => {
 const isImageUrl = (url) => {
     if (!url) return false;
     return url.startsWith('http') && /\.(png|jpg|jpeg|gif|webp)$/i.test(url);
+};
+const replaceToCurrentDomain = (url) => {
+    if (!url) return '';
+
+    const currentOrigin = window.location.origin;
+
+    return url.replace(
+        'https://hqgy.gzxinxingyiyuan.com',
+        `${currentOrigin}`
+    );
 };
 </script>

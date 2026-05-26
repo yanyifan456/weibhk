@@ -14,16 +14,16 @@
     </a-card>
     <a-card>
       <a-table :columns="columns" :data-source="tableData" :pagination="pagination" row-key="id" :scroll="{ y: 470 }"
-        bordered class="patient-table" @change="handleTableChange" :loading="loading">
+               bordered class="patient-table" @change="handleTableChange" :loading="loading">
         <template #bodyCell="{ column, record }">
           <template v-if="column.isSwitch">
-            <a-switch :checked="record.status === '1'" :disabled="true" />
+            <a-switch :checked="record.status === '1'" :disabled="true"/>
           </template>
           <template v-else-if="column.key === 'action'">
             <div class="action-buttons">
               <!-- <a-button type="link" size="small" @click="showChannelModal(record)"> 预约渠道 </a-button> -->
-              <a-button type="link" size="small" @click="showDetail(record)"> 詳情 </a-button>
-              <a-button type="link" size="small" @click="daochus(record)"> 導出 </a-button>
+              <a-button type="link" size="small" @click="showDetail(record)"> 詳情</a-button>
+              <a-button type="link" size="small" @click="daochus(record)"> 導出</a-button>
               <a-button type="link" size="small" @click="editRecord(record)">
                 {{ t("button.edit") }}
               </a-button>
@@ -40,29 +40,29 @@
     </a-card>
     <!-- 新增弹框 -->
     <a-modal v-model:open="addModalVisible" :title="t('button.Patientadd')" width="750px" @ok="handleAddSubmit"
-      destroyOnClose @cancel="handleAddCancel">
+             destroyOnClose @cancel="handleAddCancel">
       <a-form :model="addForm" layout="vertical" ref="addformRef" :rules="addFormRules">
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item :label="t('label.englishName')" name="englishName">
-              <a-input v-model:value="addForm.englishName" :placeholder="t('placeholder.enterResponsibleDoctor')" />
+              <a-input v-model:value="addForm.englishName" :placeholder="t('placeholder.enterResponsibleDoctor')"/>
             </a-form-item>
           </a-col>
           <a-col :span="12">
             <a-form-item :label="t('label.h')" name="chineseName">
-              <a-input v-model:value="addForm.chineseName" :placeholder="t('placeholder.enterAppointmentPerson')" />
+              <a-input v-model:value="addForm.chineseName" :placeholder="t('placeholder.enterAppointmentPerson')"/>
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item :label="t('label.chineseSpecialty')" name="chineseSpecialty">
-              <a-input v-model:value="addForm.chineseSpecialty" :placeholder="t('placeholder.a')" />
+              <a-input v-model:value="addForm.chineseSpecialty" :placeholder="t('placeholder.a')"/>
             </a-form-item>
           </a-col>
           <a-col :span="12">
             <a-form-item :label="t('label.englishSpecialty')" name="englishSpecialty">
-              <a-input v-model:value="addForm.englishSpecialty" :placeholder="t('placeholder.b')" />
+              <a-input v-model:value="addForm.englishSpecialty" :placeholder="t('placeholder.b')"/>
             </a-form-item>
           </a-col>
         </a-row>
@@ -70,7 +70,7 @@
           <a-col :span="12">
             <a-form-item :label="'登錄賬號'" name="loginAccount">
               <a-select v-model:value="addForm.loginAccount" :placeholder="'請選擇登錄賬號'" allow-clear
-                @change="handleLoginAccountChange">
+                        @change="handleLoginAccountChange">
                 <a-select-option v-for="item in loginAccountList" :key="item.loginName" :value="item.loginName">
                   {{ item.loginName }}
                 </a-select-option>
@@ -79,20 +79,20 @@
           </a-col>
           <a-col :span="12">
             <a-form-item :label="t('label.phone')" name="phone">
-              <a-input v-model:value="addForm.phone" :placeholder="'請輸入電話'" :disabled="true" />
+              <a-input v-model:value="addForm.phone" :placeholder="'請輸入電話'" :disabled="true"/>
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item :label="t('label.email')" name="email">
-              <a-input v-model:value="addForm.email" :placeholder="t('placeholder.g')" />
+              <a-input v-model:value="addForm.email" :placeholder="t('placeholder.g')"/>
             </a-form-item>
           </a-col>
           <a-col :span="12">
             <a-form-item :label="'機構'" name="orgId">
               <a-cascader v-model:value="addForm.orgId" :options="orgList" placeholder="請選擇機構"
-                :field-names="{ label: 'label', value: 'id', children: 'children' }" />
+                          :field-names="{ label: 'label', value: 'id', children: 'children' }"/>
             </a-form-item>
           </a-col>
         </a-row>
@@ -120,19 +120,20 @@
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item :label="'香港醫生行醫証'" name="hkCertificate">
-              <a-input v-model:value="addForm.hkCertificate" :placeholder="t('public.input') + '香港醫生行醫証'" />
+              <a-input v-model:value="addForm.hkCertificate" :placeholder="t('public.input') + '香港醫生行醫証'"/>
             </a-form-item>
           </a-col>
           <a-col :span="12">
             <a-form-item :label="'大陸行醫資格証'" name="proQualifyCertificate">
-              <a-input v-model:value="addForm.proQualifyCertificate" :placeholder="t('public.input') + '大陸行醫資格証'" />
+              <a-input v-model:value="addForm.proQualifyCertificate"
+                       :placeholder="t('public.input') + '大陸行醫資格証'"/>
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item :label="'醫院地址'" name="address">
-              <a-input v-model:value="addForm.address" :placeholder="t('public.input') + '醫院地址'" />
+              <a-input v-model:value="addForm.address" :placeholder="t('public.input') + '醫院地址'"/>
             </a-form-item>
           </a-col>
           <!-- <a-col :span="12">
@@ -145,14 +146,14 @@
           <a-col :span="12">
             <a-form-item :label="t('menu.PHARMACY')" name="nameChi">
               <a-select v-model:value="addForm.nameChi" :placeholder="t('placeholder.PHARMACY')" allow-clear
-                @change="handleHospitalChange">
+                        @change="handleHospitalChange">
                 <a-select-option v-for="item in menzhenlist" :key="item.hospitalId" :value="item.hospitalName">
                   {{ item.hospitalName }}
                 </a-select-option>
               </a-select>
             </a-form-item>
             <a-form-item :label="t('menu.aa')" name="aa">
-              <a-input v-model:value="addForm.aa" :placeholder="t('placeholder.gg')" />
+              <a-input v-model:value="addForm.aa" :placeholder="t('placeholder.gg')"/>
             </a-form-item>
           </a-col>
           <a-col :span="12" style="display: flex;justify-content: space-around;">
@@ -167,18 +168,18 @@
             </a-form-item> -->
             <a-form-item :label="'医生印章'" name="esignature">
               <a-upload v-model:file-list="addForm.esignature" list-type="picture-card" :before-upload="beforeUpload"
-                @preview="handlePreview">
+                        @preview="handlePreview">
                 <div v-if="addForm.esignature.length < 1">
-                  <plus-outlined />
+                  <plus-outlined/>
                   <div style="margin-top: 8px">{{ t("button.add") }}</div>
                 </div>
               </a-upload>
             </a-form-item>
             <a-form-item label="医生头像" name="doctorPhotoFileList">
               <a-upload v-model:file-list="addForm.doctorPhotoFileList" list-type="picture-card"
-                :before-upload="beforeUpload" @preview="handlePreview">
+                        :before-upload="beforeUpload" @preview="handlePreview">
                 <div v-if="addForm.doctorPhotoFileList.length < 1">
-                  <plus-outlined />
+                  <plus-outlined/>
                   <div style="margin-top: 8px">上传头像</div>
                 </div>
               </a-upload>
@@ -188,12 +189,12 @@
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item label="執業範圍" name="practiceScope">
-              <a-input v-model:value="addForm.practiceScope" placeholder="請輸入執業範圍" />
+              <a-input v-model:value="addForm.practiceScope" placeholder="請輸入執業範圍"/>
             </a-form-item>
           </a-col>
           <a-col :span="12">
             <a-form-item label="多點執業備案號" name="multiPractice">
-              <a-input v-model:value="addForm.multiPractice" placeholder="請輸入多點執業備案號" />
+              <a-input v-model:value="addForm.multiPractice" placeholder="請輸入多點執業備案號"/>
             </a-form-item>
           </a-col>
         </a-row>
@@ -201,7 +202,7 @@
           <a-col :span="24">
             <a-form-item label="執業有效期" name="professionValidity">
               <a-range-picker v-model:value="addForm.professionValidity" :placeholder="['開始日期', '結束日期']"
-                format="YYYY-MM-DD" value-format="YYYY-MM-DD" style="width: 100%" />
+                              format="YYYY-MM-DD" value-format="YYYY-MM-DD" style="width: 100%"/>
             </a-form-item>
           </a-col>
         </a-row>
@@ -209,29 +210,29 @@
     </a-modal>
     <!-- 编辑弹框 -->
     <a-modal destroyOnClose v-model:open="editModalVisible" :title="t('button.edit')" width="750px"
-      @ok="handleEditSubmit" @cancel="handleEditCancel">
+             @ok="handleEditSubmit" @cancel="handleEditCancel">
       <a-form :model="editForm" layout="vertical" ref="editformRef" :rules="editFormRules">
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item :label="t('label.englishName')" name="englishName">
-              <a-input v-model:value="editForm.englishName" :placeholder="t('placeholder.enterResponsibleDoctor')" />
+              <a-input v-model:value="editForm.englishName" :placeholder="t('placeholder.enterResponsibleDoctor')"/>
             </a-form-item>
           </a-col>
           <a-col :span="12">
             <a-form-item :label="t('label.h')" name="chineseName">
-              <a-input v-model:value="editForm.chineseName" :placeholder="t('placeholder.enterAppointmentPerson')" />
+              <a-input v-model:value="editForm.chineseName" :placeholder="t('placeholder.enterAppointmentPerson')"/>
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item :label="t('label.chineseSpecialty')" name="chineseSpecialty">
-              <a-input v-model:value="editForm.chineseSpecialty" :placeholder="t('placeholder.a')" />
+              <a-input v-model:value="editForm.chineseSpecialty" :placeholder="t('placeholder.a')"/>
             </a-form-item>
           </a-col>
           <a-col :span="12">
             <a-form-item :label="t('label.englishSpecialty')" name="englishSpecialty">
-              <a-input v-model:value="editForm.englishSpecialty" :placeholder="t('placeholder.b')" />
+              <a-input v-model:value="editForm.englishSpecialty" :placeholder="t('placeholder.b')"/>
             </a-form-item>
           </a-col>
         </a-row>
@@ -248,20 +249,20 @@
           <a-col :span="12">
             <a-form-item :label="t('label.phone')" name="phone">
               <a-input v-model:value="editForm.phone" :placeholder="t('placeholder.enterEmergencyContactPhone')"
-                :disabled="true" />
+                       :disabled="true"/>
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item :label="t('label.email')" name="email">
-              <a-input v-model:value="editForm.email" :placeholder="t('placeholder.g')" />
+              <a-input v-model:value="editForm.email" :placeholder="t('placeholder.g')"/>
             </a-form-item>
           </a-col>
           <a-col :span="12">
             <a-form-item label="機構" name="orgId">
               <a-cascader v-model:value="editForm.orgId" :options="orgList" placeholder="請選擇機構"
-                :field-names="{ label: 'label', value: 'id', children: 'children' }" />
+                          :field-names="{ label: 'label', value: 'id', children: 'children' }"/>
             </a-form-item>
           </a-col>
         </a-row>
@@ -288,26 +289,27 @@
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item :label="'香港醫生行醫証'" name="hkCertificate">
-              <a-input v-model:value="editForm.hkCertificate" :placeholder="t('public.input') + '香港醫生行醫証'" />
+              <a-input v-model:value="editForm.hkCertificate" :placeholder="t('public.input') + '香港醫生行醫証'"/>
             </a-form-item>
           </a-col>
           <a-col :span="12">
             <a-form-item :label="'大陸行醫資格証'" name="proQualifyCertificate">
-              <a-input v-model:value="editForm.proQualifyCertificate" :placeholder="t('public.input') + '大陸行醫資格証'" />
+              <a-input v-model:value="editForm.proQualifyCertificate"
+                       :placeholder="t('public.input') + '大陸行醫資格証'"/>
             </a-form-item>
           </a-col>
         </a-row>
-       
+
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item :label="'醫院地址'" name="address">
-              <a-input v-model:value="editForm.address" :placeholder="t('public.input') + '醫院地址'" />
+              <a-input v-model:value="editForm.address" :placeholder="t('public.input') + '醫院地址'"/>
             </a-form-item>
           </a-col>
           <a-col :span="12">
             <a-form-item :label="t('menu.PHARMACY')" name="nameChi">
               <a-select v-model:value="editForm.nameChi" :placeholder="t('placeholder.PHARMACY')" allow-clear
-                @change="handleEditHospitalChange">
+                        @change="handleEditHospitalChange">
                 <a-select-option v-for="item in menzhenlist" :key="item.hospitalId" :value="item.hospitalName">
                   {{ item.hospitalName }}
                 </a-select-option>
@@ -318,7 +320,7 @@
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item :label="t('menu.aa')" name="aa">
-              <a-input v-model:value="editForm.aa" :placeholder="t('placeholder.gg')" />
+              <a-input v-model:value="editForm.aa" :placeholder="t('placeholder.gg')"/>
             </a-form-item>
           </a-col>
           <a-col :span="12" style="display: flex;justify-content: space-around;">
@@ -333,18 +335,18 @@
             </a-form-item> -->
             <a-form-item :label="'醫生印章'" name="esignature">
               <a-upload v-model:file-list="editForm.esignature" list-type="picture-card" :before-upload="beforeUpload"
-                @preview="handlePreview">
+                        @preview="handlePreview">
                 <div v-if="editForm.esignature.length < 1">
-                  <plus-outlined />
+                  <plus-outlined/>
                   <div style="margin-top: 8px">{{ t("button.add") }}</div>
                 </div>
               </a-upload>
             </a-form-item>
             <a-form-item label="医生头像" name="doctorPhotoFileList">
               <a-upload v-model:file-list="editForm.doctorPhotoFileList" list-type="picture-card"
-                :before-upload="beforeUpload" @preview="handlePreview">
+                        :before-upload="beforeUpload" @preview="handlePreview">
                 <div v-if="editForm.doctorPhotoFileList.length < 1">
-                  <plus-outlined />
+                  <plus-outlined/>
                   <div style="margin-top: 8px">上传头像</div>
                 </div>
               </a-upload>
@@ -354,12 +356,12 @@
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item label="執業範圍" name="practiceScope">
-              <a-input v-model:value="editForm.practiceScope" placeholder="請輸入執業範圍" />
+              <a-input v-model:value="editForm.practiceScope" placeholder="請輸入執業範圍"/>
             </a-form-item>
           </a-col>
           <a-col :span="12">
             <a-form-item label="多點執業備案號" name="multiPractice">
-              <a-input v-model:value="editForm.multiPractice" placeholder="請輸入多點執業備案號" />
+              <a-input v-model:value="editForm.multiPractice" placeholder="請輸入多點執業備案號"/>
             </a-form-item>
           </a-col>
         </a-row>
@@ -367,7 +369,7 @@
           <a-col :span="24">
             <a-form-item label="執業有效期" name="professionValidity">
               <a-range-picker v-model:value="editForm.professionValidity" :placeholder="['開始日期', '結束日期']"
-                format="YYYY-MM-DD" value-format="YYYY-MM-DD" style="width: 100%" />
+                              format="YYYY-MM-DD" value-format="YYYY-MM-DD" style="width: 100%"/>
             </a-form-item>
           </a-col>
         </a-row>
@@ -375,16 +377,16 @@
     </a-modal>
     <!-- 添加预约渠道弹窗 -->
     <a-modal v-model:open="channelModalVisible" title="预约渠道" width="520px" @ok="handleChannelSubmit"
-      @cancel="handleChannelCancel" ok-text="保存" cancel-text="取消">
+             @cancel="handleChannelCancel" ok-text="保存" cancel-text="取消">
       <div class="channel-modal">
         <div class="channel-header">
           <span style="margin-right: 20px">全选</span>
-          <a-switch v-model:checked="allChecked" @change="handleAllCheckChange" />
+          <a-switch v-model:checked="allChecked" @change="handleAllCheckChange"/>
         </div>
         <a-table :columns="channelColumns" :data-source="channelList" :pagination="false" bordered row-key="name">
           <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'status'">
-              <a-switch v-model:checked="record.checked" />
+              <a-switch v-model:checked="record.checked"/>
             </template>
           </template>
         </a-table>
@@ -392,11 +394,11 @@
     </a-modal>
     <!-- 图片预览 -->
     <a-modal v-model:open="previewVisible" title="圖片預覽" :footer="null" @cancel="previewVisible = false">
-      <img :src="previewImage" style="width: 100%" />
+      <img :src="previewImage" style="width: 100%"/>
     </a-modal>
     <!-- 详情弹窗 -->
     <a-modal v-model:open="detailModalVisible" title="醫生詳情" width="750px" :footer="null"
-      @cancel="detailModalVisible = false">
+             @cancel="detailModalVisible = false">
       <a-form :model="detailForm" layout="vertical" class="detail-form">
         <a-row :gutter="16">
           <a-col :span="12">
@@ -504,21 +506,23 @@
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item label="執業有效期">
-              <span>{{ detailForm.professionValidityStart && detailForm.professionValidityEnd ?
-                detailForm.professionValidityStart + ' 至 ' + detailForm.professionValidityEnd : '-' }}</span>
+              <span>{{
+                  detailForm.professionValidityStart && detailForm.professionValidityEnd ?
+                      detailForm.professionValidityStart + ' 至 ' + detailForm.professionValidityEnd : '-'
+                }}</span>
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item label="醫生印章">
-              <a-image v-if="detailForm.esignature" :src="detailForm.esignature" :width="100" :height="100" />
+              <a-image v-if="detailForm.esignature" :src="detailForm.esignature" :width="100" :height="100"/>
               <span v-else>-</span>
             </a-form-item>
           </a-col>
           <a-col :span="12">
             <a-form-item label="醫生頭像">
-              <a-image v-if="detailForm.doctorPhotoUrl" :src="detailForm.doctorPhotoUrl" :width="100" :height="100" />
+              <a-image v-if="detailForm.doctorPhotoUrl" :src="detailForm.doctorPhotoUrl" :width="100" :height="100"/>
               <span v-else>-</span>
             </a-form-item>
           </a-col>
@@ -528,10 +532,10 @@
   </div>
 </template>
 <script setup>
-import { ref, reactive, computed } from "vue";
-import { message } from "ant-design-vue";
-import { useI18n } from "vue-i18n";
-import { PlusOutlined } from "@ant-design/icons-vue";
+import {ref, reactive, computed} from "vue";
+import {message} from "ant-design-vue";
+import {useI18n} from "vue-i18n";
+import {PlusOutlined} from "@ant-design/icons-vue";
 import {
   selectDoctorList,
   selectDoctoradd,
@@ -545,14 +549,15 @@ import {
   selectDoctorAccount,
   buildTree
 } from "@/api/yyf";
-const { t } = useI18n();
-import { autoMask, maskString } from "@/utils/tools";
+
+const {t} = useI18n();
+import {autoMask, maskString} from "@/utils/tools";
 // 表格列
 const columns = computed(() => [
-  { title: t("label.f"), dataIndex: "loginName", key: "loginName", align: "center" },
-  { title: t("label.g"), dataIndex: "enName", key: "enName", align: "center" },
-  { title: t("label.h"), dataIndex: "doctorName", key: "doctorName", align: "center" },
-  { title: t("label.i"), dataIndex: "serialNumber", key: "serialNumber", align: "center" },
+  {title: t("label.f"), dataIndex: "loginName", key: "loginName", align: "center"},
+  {title: t("label.g"), dataIndex: "enName", key: "enName", align: "center"},
+  {title: t("label.h"), dataIndex: "doctorName", key: "doctorName", align: "center"},
+  {title: t("label.i"), dataIndex: "serialNumber", key: "serialNumber", align: "center"},
   {
     title: t("label.j"),
     dataIndex: "status",
@@ -560,12 +565,12 @@ const columns = computed(() => [
     align: "center",
     isSwitch: true, // ⭐ 标记为 switch 渲染
   },
-  { title: t("button.shenhe"), key: "action", align: "center" },
+  {title: t("button.shenhe"), key: "action", align: "center"},
 ]);
 const channelColumns = [
-  { title: "渠道名", dataIndex: "name", key: "name", align: "center" },
-  { title: "备注", dataIndex: "remark", key: "remark", align: "center" },
-  { title: "连接状态", key: "status", align: "center" },
+  {title: "渠道名", dataIndex: "name", key: "name", align: "center"},
+  {title: "备注", dataIndex: "remark", key: "remark", align: "center"},
+  {title: "连接状态", key: "status", align: "center"},
 ];
 // 示例数据
 const tableData = ref([]);
@@ -726,26 +731,26 @@ const addForm = reactive({
 });
 const addformRef = ref(null);
 const addFormRules = {
-  englishName: [{ required: true, message: "請輸入英文名", trigger: "blur" }],
-  chineseName: [{ required: true, message: "請輸入中文名", trigger: "blur" }],
-  proQualifyCertificate: [{ required: true, message: "大陸行醫資格証", trigger: "blur" }],
-  hkCertificate: [{ required: true, message: "香港醫生行醫証", trigger: "blur" }],
-  chineseSpecialty: [{ required: true, message: "請輸入中文專業", trigger: "blur" }],
-  englishSpecialty: [{ required: true, message: "請輸入英文專業", trigger: "blur" }],
-  phone: [{ required: true, message: "請輸入手機號", trigger: "blur" }],
-  address: [{ required: true, message: "請輸入醫院地址", trigger: "blur" }],
-  email: [{ required: true, message: "請輸入郵箱", trigger: "blur" }],
-  printTitle: [{ required: true, message: "請輸入打印標題", trigger: "blur" }],
-  subject: [{ required: true, message: "請輸入科目", trigger: "blur" }],
-  aa: [{ required: true, message: "請輸入專業所長", trigger: "blur" }],
-  password: [{ required: true, message: "請輸入密碼", trigger: "blur" }],
-  nameChi: [{ required: true, message: "請選擇診所", trigger: "blur" }],
-  orgId: [{ required: true, message: "請選擇機構", trigger: "blur" }],
-  licenseFileList: [{ required: true, message: "請上傳證件", trigger: "change" }],
-  esignature: [{ required: true, message: "請上傳印章", trigger: "change" }],
-  doctorPhotoFileList: [{ required: true, message: "請上傳醫生頭像", trigger: "change" }],
-  position: [{ required: true, message: "請選擇職稱", trigger: "change" }],
-  loginAccount: [{ required: true, message: "請選擇登录账号", trigger: "change" }],
+  englishName: [{required: true, message: "請輸入英文名", trigger: "blur"}],
+  chineseName: [{required: true, message: "請輸入中文名", trigger: "blur"}],
+  proQualifyCertificate: [{required: true, message: "大陸行醫資格証", trigger: "blur"}],
+  hkCertificate: [{required: true, message: "香港醫生行醫証", trigger: "blur"}],
+  chineseSpecialty: [{required: true, message: "請輸入中文專業", trigger: "blur"}],
+  englishSpecialty: [{required: true, message: "請輸入英文專業", trigger: "blur"}],
+  phone: [{required: true, message: "請輸入手機號", trigger: "blur"}],
+  address: [{required: true, message: "請輸入醫院地址", trigger: "blur"}],
+  email: [{required: true, message: "請輸入郵箱", trigger: "blur"}],
+  printTitle: [{required: true, message: "請輸入打印標題", trigger: "blur"}],
+  subject: [{required: true, message: "請輸入科目", trigger: "blur"}],
+  aa: [{required: true, message: "請輸入專業所長", trigger: "blur"}],
+  password: [{required: true, message: "請輸入密碼", trigger: "blur"}],
+  nameChi: [{required: true, message: "請選擇診所", trigger: "blur"}],
+  orgId: [{required: true, message: "請選擇機構", trigger: "blur"}],
+  licenseFileList: [{required: true, message: "請上傳證件", trigger: "change"}],
+  esignature: [{required: true, message: "請上傳印章", trigger: "change"}],
+  doctorPhotoFileList: [{required: true, message: "請上傳醫生頭像", trigger: "change"}],
+  position: [{required: true, message: "請選擇職稱", trigger: "change"}],
+  loginAccount: [{required: true, message: "請選擇登录账号", trigger: "change"}],
 };
 const editModalVisible = ref(false);
 const editForm = reactive({
@@ -778,25 +783,25 @@ const editForm = reactive({
 });
 const editformRef = ref(null);
 const editFormRules = {
-  englishName: [{ required: true, message: "请输入英文名", trigger: "blur" }],
-  chineseName: [{ required: true, message: "请输入中英文名", trigger: "blur" }],
-  chineseSpecialty: [{ required: true, message: "请输入中文专业", trigger: "blur" }],
-  englishSpecialty: [{ required: true, message: "请输入英文专业", trigger: "blur" }],
-  hkCertificate: [{ required: true, message: "香港醫生行醫証", trigger: "blur" }],
-  proQualifyCertificate: [{ required: true, message: "大陸行醫資格証", trigger: "blur" }],
-  address: [{ required: true, message: "请输入英文专业", trigger: "blur" }],
-  phone: [{ required: true, message: "请输入手机号", trigger: "blur" }],
-  email: [{ required: true, message: "请输入邮箱", trigger: "blur" }],
-  printTitle: [{ required: true, message: "请输入打印标题", trigger: "blur" }],
-  subject: [{ required: true, message: "请选择科室", trigger: "change" }],
-  licenseFileList: [{ required: true, message: "请上传证件", trigger: "change" }],
-  esignature: [{ required: true, message: "请上传证件", trigger: "change" }],
-  doctorPhotoFileList: [{ required: true, message: "请上传医生头像", trigger: "change" }],
-  channelTag: [{ required: true, message: "请选择渠道", trigger: "change" }],
-  nameChi: [{ required: true, message: "请选择诊所", trigger: "change" }],
-  position: [{ required: true, message: "请选择职称", trigger: "change" }],
-  aa: [{ required: true, message: "请输入专业所长", trigger: "blur" }],
-  loginName: [{ required: true, message: "请选择登录账号", trigger: "change" }],
+  englishName: [{required: true, message: "请输入英文名", trigger: "blur"}],
+  chineseName: [{required: true, message: "请输入中英文名", trigger: "blur"}],
+  chineseSpecialty: [{required: true, message: "请输入中文专业", trigger: "blur"}],
+  englishSpecialty: [{required: true, message: "请输入英文专业", trigger: "blur"}],
+  hkCertificate: [{required: true, message: "香港醫生行醫証", trigger: "blur"}],
+  proQualifyCertificate: [{required: true, message: "大陸行醫資格証", trigger: "blur"}],
+  address: [{required: true, message: "请输入英文专业", trigger: "blur"}],
+  phone: [{required: true, message: "请输入手机号", trigger: "blur"}],
+  email: [{required: true, message: "请输入邮箱", trigger: "blur"}],
+  printTitle: [{required: true, message: "请输入打印标题", trigger: "blur"}],
+  subject: [{required: true, message: "请选择科室", trigger: "change"}],
+  licenseFileList: [{required: true, message: "请上传证件", trigger: "change"}],
+  esignature: [{required: true, message: "请上传证件", trigger: "change"}],
+  doctorPhotoFileList: [{required: true, message: "请上传医生头像", trigger: "change"}],
+  channelTag: [{required: true, message: "请选择渠道", trigger: "change"}],
+  nameChi: [{required: true, message: "请选择诊所", trigger: "change"}],
+  position: [{required: true, message: "请选择职称", trigger: "change"}],
+  aa: [{required: true, message: "请输入专业所长", trigger: "blur"}],
+  loginName: [{required: true, message: "请选择登录账号", trigger: "change"}],
 };
 const previewVisible = ref(false);
 const previewImage = ref("");
@@ -870,7 +875,7 @@ const showDetail = async (record) => {
     await getTree();
   }
   try {
-    const res = await selectDoctorDetaill({ doctorId: record.doctorId });
+    const res = await selectDoctorDetaill({doctorId: record.doctorId});
     if (res.code === "200" && res.msg === "success") {
       const data = res.data.data;
 
@@ -939,7 +944,7 @@ const handleChannelSubmit = async () => {
   if (!currentChannelRecord.value) return;
   try {
     // 获取当前记录的详情，保持其他字段不变
-    const detailRes = await selectDoctorDetaill({ doctorId: currentChannelRecord.value.doctorId });
+    const detailRes = await selectDoctorDetaill({doctorId: currentChannelRecord.value.doctorId});
     if (detailRes.code !== "200" || detailRes.msg !== "success") {
       message.error("获取详情失败");
       return;
@@ -1010,7 +1015,7 @@ const editRecord = async (record) => {
   }
 
   try {
-    const res = await selectDoctorDetaill({ doctorId: record.doctorId });
+    const res = await selectDoctorDetaill({doctorId: record.doctorId});
     if (res.code === "200" && res.msg === "success") {
       console.log("获取医生详情数据:", res);
       const data = res.data.data;
@@ -1058,36 +1063,36 @@ const editRecord = async (record) => {
 
       // 处理图片回显
       editForm.licenseFileList = data.proQualifyCertificate
-        ? [
-          {
-            uid: "-1",
-            name: "license.png",
-            status: "done",
-            url: data.proQualifyCertificate,
-          },
-        ]
-        : [];
+          ? [
+            {
+              uid: "-1",
+              name: "license.png",
+              status: "done",
+              url: data.proQualifyCertificate,
+            },
+          ]
+          : [];
       // 处理医生头像回显
       editForm.doctorPhotoFileList = data.doctorPhoto
-        ? [
-          {
-            uid: "-2",
-            name: "doctorPhoto.png",
-            status: "done",
-            url: data.doctorPhoto,
-          },
-        ]
-        : [];
+          ? [
+            {
+              uid: "-2",
+              name: "doctorPhoto.png",
+              status: "done",
+              url: data.doctorPhoto,
+            },
+          ]
+          : [];
       editForm.esignature = data.esignature
-        ? [
-          {
-            uid: "-2",
-            name: "esignature.png",
-            status: "done",
-            url: data.esignature,
-          },
-        ]
-        : [];
+          ? [
+            {
+              uid: "-2",
+              name: "esignature.png",
+              status: "done",
+              url: data.esignature,
+            },
+          ]
+          : [];
       // 设置选中的门诊
       if (data.hospital) {
         selectedEditHospital.value = menzhenlist.value.find(item => item.hospitalName === data.hospital);
@@ -1102,7 +1107,7 @@ const editRecord = async (record) => {
 };
 const deleteRecord = async (record) => {
   try {
-    const res = await selectDoctordel({ ids: [record.doctorId] });
+    const res = await selectDoctordel({ids: [record.doctorId]});
     if (res.code === "200" && res.msg === "success") {
       message.success("删除成功");
       getlist();
@@ -1215,7 +1220,7 @@ const handleAddSubmit = async () => {
       certification: addForm.aa,
       mainlandFee: "",
       hkFee: "",
-      proQualifyCertificate: addForm.licenseFileList[0]?.thumbUrl || "",
+      // proQualifyCertificate: addForm.licenseFileList[0]?.thumbUrl || "",
       esignature: addForm.esignature[0]?.thumbUrl || "",
       proQualifyName: "",
       banckAcctName: "",
@@ -1231,7 +1236,7 @@ const handleAddSubmit = async () => {
       hkCertificate: addForm.hkCertificate || '',
       // 修改：传门诊的 hospitalId、address、hospitalTel
       hospitalId: selectedHospital.value?.hospitalId || "",
-      address: selectedHospital.value?.address || "",
+      // address: selectedHospital.value?.address || "",
       hospitalTel: selectedHospital.value?.hospitalTel || "",
       enName: addForm.englishName,
       loginName: addForm.loginAccount,
@@ -1247,6 +1252,8 @@ const handleAddSubmit = async () => {
       orgId: addForm.orgId?.length ? addForm.orgId[addForm.orgId.length - 1] : "",
       address: addForm.address,
     };
+    console.log(params)
+    return
     const res = await selectDoctoradd(params);
     console.log(res.data.message);
     if (res.code === "200" && res.msg === "success" && res.data.message === "新增成功") {
@@ -1288,10 +1295,11 @@ const handleEditSubmit = async () => {
       serialNumber: editForm.phone,
       depart: editForm.subject,
       profession: editForm.chineseSpecialty,
+      hkCertificate: editForm.hkCertificate || '',
       certification: editForm.aa || "",
       // mainlandFee: originalData?.mainlandFee || "",
       // hkFee: originalData?.hkFee || "",
-      proQualifyCertificate: editForm.licenseFileList[0]?.thumbUrl || editForm.licenseFileList[0]?.url || "",
+      proQualifyCertificate: editForm.proQualifyCertificate || "",
       esignature: editForm.esignature[0]?.thumbUrl || editForm.esignature[0]?.url || "",
       proQualifyName: originalData?.proQualifyName || "",
       banckAcctName: originalData?.banckAcctName || "",
@@ -1305,7 +1313,7 @@ const handleEditSubmit = async () => {
       bankAcctNo: originalData?.bankAcctNo || "",
       // 修改：传门诊的 hospitalId、address、hospitalTel
       hospitalId: selectedEditHospital.value?.hospitalId || originalData?.hospitalId || "",
-      address: selectedEditHospital.value?.address || originalData?.address || "",
+      // address: selectedEditHospital.value?.address || originalData?.address || "",
       hospitalTel: selectedEditHospital.value?.hospitalTel || originalData?.hospitalTel || "",
       enName: editForm.englishName,
       loginName: editForm.loginName,
@@ -1350,7 +1358,7 @@ const daochu = async () => {
   window.URL.revokeObjectURL(url);
 };
 const daochus = async (record) => {
-  const res = await exportMedicines({ doctorId: record.doctorId });
+  const res = await exportMedicines({doctorId: record.doctorId});
   const blob = new Blob([res.data], {
     type: "application/vnd.ms-excel",
   });

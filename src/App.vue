@@ -10,7 +10,7 @@
 </style> -->
 <template>
     <a-config-provider :locale="locale">
-
+        <!-- <div>6</div> -->
         <router-view></router-view>
     </a-config-provider>
 </template>

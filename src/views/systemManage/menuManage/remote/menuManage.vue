@@ -700,6 +700,7 @@ import {
   asadasdq,
   getuserorderList,
   presConsultation,
+  getfirstpreDetail
 } from '@/api/yyf';
 import { startRecording, stopRecording } from '@/api/video';
 import {
@@ -1431,9 +1432,10 @@ const openImgPrescriptionModal = async (record) => {
   imgPrescriptionVisible.value = true;
   // 预加载处方单详情，用于第一步预览
   try {
-    const res = await selectprescriptiondetail({ consultationId: record.consultationid });
+    const res = await getfirstpreDetail({ consultationId: record.consultationid });
     if (res.code == 200 || res.code === '200') {
       wpImgPrescriptionDetail.value = res.data.data || {};
+      console.log('处方单详情:', wpImgPrescriptionDetail.value);
     }
   } catch (error) {
     console.error('获取处方单详情失败:', error);
@@ -1485,6 +1487,7 @@ const handleWpImgPrescriptionStep1Ok = async () => {
 
 /** 图片上传处方 - 第二步确认完成，提交 */
 const handleWpImgConfirmName = async () => {
+
   wpImgConfirmNameVisible.value = false;
   const asdf = await selectprescriptiondetail({ consultationId: imgPrescriptionRecord.value.consultationid });
   const medicines = asdf?.data?.data?.medicines || [];
@@ -1537,7 +1540,8 @@ const openWritePrescriptionModal = async (record) => {
   wpSelectedPharmacy.value = null;
   writePrescriptionVisible.value = true;
   try {
-    const res = await selectprescriptiondetail({ consultationId: record.consultationid });
+    const res = await getfirstpreDetail({ consultationId: record.consultationid });
+
     if (res.code == 200 || res.code === '200') {
       writePrescriptionDetail.value = res.data.data || {};
     }
@@ -1851,9 +1855,12 @@ const handleEditSuggestionStep1Ok = async () => {
 /** 修改建议单 - 第二步确认完成，提交 */
 const handleEditSuggestionConfirmName = async () => {
   editSuggestionConfirmNameVisible.value = false;
+  const editconsultationMedicine = editSuggestionMed.buildMedicines();
+  console.log('修改建议单提交数据:', editSuggestionDetail.value.presUrl);
+  console.log('修改建议单提交数据:', editSuggestionDetail.value.adviceUrl);
   try {
     const record = editSuggestionRecord.value;
-    const res = await updateConsultation({
+    const params = {
       consultationId: record.consultationid,
       diagnosticReport: editSuggestionDiagnosisReport.value,
       medicines: editSuggestionMed.buildMedicines(),
@@ -1864,8 +1871,11 @@ const handleEditSuggestionConfirmName = async () => {
       pharmacistId: record.pharmacistid,
       consultationMedicine: editconsultationMedicine.value,
       adviceUrl: editSuggestionImageUrl.value,
-      presUrl: editSuggestionImageUrl.value,
-    });
+      presUrl: editSuggestionDetail.value.presUrl,
+      consultationMedicine: editSuggestionDetail.value.consultationMedicine,
+    };
+
+    const res = await updateConsultation(params);
     if (res.code == 200) {
       message.success('修改成功');
       editSuggestionModalVisible.value = false;
@@ -1974,6 +1984,7 @@ const handleEditPrescriptionStep1Ok = async () => {
 /** 修改处方单 - 第二步确认完成，提交 */
 const handleEditPrescriptionConfirmName = async () => {
   editPrescriptionConfirmNameVisible.value = false;
+  console.log('修改处方单提交数据:', editPrescriptionDetail.value);
   try {
     const medicines = editPrescriptionDetail.value?.medicines || [];
     const state = medicines.length === 0 ? '8' : '7';
@@ -1988,7 +1999,7 @@ const handleEditPrescriptionConfirmName = async () => {
       medicines,
       state,
       presUrl: editPrescriptionImageUrl.value,
-      adviceUrl: editPrescriptionImageUrl.value,
+      adviceUrl: editPrescriptionDetail.value.adviceUrl,
     });
     if (res.code == 200) {
       message.success('修改成功');

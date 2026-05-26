@@ -263,3 +263,5 @@ export const presConsultation = (params) =>
   request.post("/acceptmidorderuser/presConsultation", params);
 export const asadasdq = (params) =>
   request.post("/mini/updonsultations", params);
+export const getfirstpreDetail = (params) =>
+  request.post("/acceptpharmacy/getfirstpreDetail", params);

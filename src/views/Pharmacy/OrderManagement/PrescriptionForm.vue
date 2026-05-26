@@ -68,9 +68,7 @@
             <!-- 右上角：机构 logo/名称 + 单据编号 + 日期 -->
             <div style="text-align: right; font-size: 13px;  min-width: 200px;">
                 <!-- 机构名称（hospitalName） -->
-                <img style="width: 190px;height: 40px;" :src="detail.hospitalPhoto?.startsWith('data:image')
-                    ? detail.hospitalPhoto
-                    : 'data:image/png;base64,' + detail.hospitalPhoto" alt="" />
+                <img style="width: 190px;height: 40px;" :src="detail.hospitalPhoto" alt="" />
                 <div style="font-size: 12px;  margin-bottom: 10px;">{{ detail.hospitalEnName || '' }}</div>
                 <div style="margin-top: 8px;margin-top: 100px;">單據編號：{{ detail.formId || '' }}</div>
                 <div style="margin-top: 4px;">日期：&nbsp;{{ detail.createTime ? detail.createTime.slice(0, 10) :
@@ -131,15 +129,15 @@
                         <td style="border: 1px solid ; padding: 6px;">{{ item.name || '' }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.spec || '' }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.dosageForm || ''
-                        }}</td>
+                            }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.directionsRoute ||
                             '' }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.frenquency || ''
-                        }}</td>
+                            }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.duration || '' }}
                         </td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.medicineCun || ''
-                        }}</td>
+                            }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.specialPurpose ||
                             '' }}</td>
                     </tr>
