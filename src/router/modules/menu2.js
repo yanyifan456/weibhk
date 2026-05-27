@@ -10,7 +10,7 @@ const menu2 = [
       icon: "https://doctor.gzxinxingyiyuan.com/images/image/1.png",
       activeIcon: "https://doctor.gzxinxingyiyuan.com/images/image/01.png",
     },
-    component: () => import("@/views/home/home.vue"),
+    component: () => import("@/views/Home/Home.vue"),
   },
   {
     path: "/userManage",
@@ -58,6 +58,13 @@ const menu2 = [
         meta: { title: "menu.recordAudit" },
         component: () =>
           import("@/views/systemManage/recordAudit/recordAudit.vue"),
+      },
+      {
+        path: "consultationvideo",
+        name: "consultationvideo",
+        meta: { title: "menu.consultationvideo" },
+        component: () =>
+          import("@/views/systemManage/consultationvideo/consultationvideo.vue"),
       },
     ],
   },

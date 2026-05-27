@@ -252,6 +252,17 @@ export const selectDoctorTitle = (params) =>
 export const selectDoctorAccount = (params) =>
   request.post("/middoctor/selectDoctorAccount", params);
 
+export const uploadDoctorPhoto = (formData) => {
+  return request({
+    url: "https://hqgy.gzxinxingyiyuan.com/filedec/file/upload",
+    method: "post",
+    data: formData,
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+};
+
 export const signature = (params) =>
   request.post("/third/signature/doctor", params);
 export const updonsultations = (params) =>
@@ -265,3 +276,5 @@ export const asadasdq = (params) =>
   request.post("/mini/updonsultations", params);
 export const getfirstpreDetail = (params) =>
   request.post("/acceptpharmacy/getfirstpreDetail", params);
+export const videolist = (params) =>
+  request.post("/video/record/select/consultation/video/list", params);

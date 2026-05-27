@@ -469,23 +469,24 @@
           </div>
         </template>
       </PrescriptionFormSSS>
+      <!-- ========== 填写处方 - 第一步确认（预览处方单 + 截图上传） ========== -->
+      <a-modal v-model:open="wpConfirmSignVisible" title="確認簽署處方單" width="60%" ok-text="確定" cancel-text="取消"
+               :confirm-loading="prescriptionUploading" @ok="handlePrescriptionStep1Ok" @cancel="wpConfirmSignVisible = false">
+        <p style="color: #c0392b; font-size: 13px; margin-bottom: 12px;">請確認以下處方單內容，點擊確定後將生成圖片並提交。</p>
+        <div ref="prescriptionPreviewRef"
+             style="background:#fff; padding:24px 28px; border:1px solid #eee; border-radius:4px; overflow:visible;">
+          <PrescriptionFormSSS :detail="writePrescriptionDetail" />
+        </div>
+      </a-modal>
+
+      <!-- 填写处方 - 第二步确认（独立，在 modal 外） -->
+      <a-modal v-model:open="wpConfirmNameVisible" title="確認簽名" :width="360" ok-text="確定" cancel-text="取消"
+               @ok="handleWpConfirmName" @cancel="wpConfirmNameVisible = false">
+        <p style="font-size: 16px; text-align: center; padding: 12px 0;">您確認簽名？</p>
+      </a-modal>
+
     </a-modal>
 
-    <!-- ========== 填写处方 - 第一步确认（预览处方单 + 截图上传） ========== -->
-    <a-modal v-model:open="wpConfirmSignVisible" title="確認簽署處方單" width="60%" ok-text="確定" cancel-text="取消"
-      :confirm-loading="prescriptionUploading" @ok="handlePrescriptionStep1Ok" @cancel="wpConfirmSignVisible = false">
-      <p style="color: #c0392b; font-size: 13px; margin-bottom: 12px;">請確認以下處方單內容，點擊確定後將生成圖片並提交。</p>
-      <div ref="prescriptionPreviewRef"
-        style="background:#fff; padding:24px 28px; border:1px solid #eee; border-radius:4px; overflow:visible;">
-        <PrescriptionFormSSS :detail="writePrescriptionDetail" />
-      </div>
-    </a-modal>
-
-    <!-- 填写处方 - 第二步确认（独立，在 modal 外） -->
-    <a-modal v-model:open="wpConfirmNameVisible" title="確認簽名" :width="360" ok-text="確定" cancel-text="取消"
-      @ok="handleWpConfirmName" @cancel="wpConfirmNameVisible = false">
-      <p style="font-size: 16px; text-align: center; padding: 12px 0;">您確認簽名？</p>
-    </a-modal>
 
     <!-- ========== 修改建议单弹窗（state=2/7） ========== -->
     <a-modal v-model:open="editSuggestionModalVisible" destroyOnClose title="修改建議單" width="60%" :footer="null"
@@ -1500,6 +1501,7 @@ const handleWpImgConfirmName = async () => {
       consultationMedicine: wpImgUpload.uploadedUrl.value,
       pharmacistId: wpImgSelectedPharmacy.value,
       presUrl: wpImgPrescriptionImageUrl.value,
+      presType: '1', // 标记为图片上传处方
     });
     if (res.code == 200 || res.code === '200') {
       message.success('处方提交成功');
@@ -1602,6 +1604,7 @@ const handleWpConfirmName = async () => {
       consultationMedicine: wpRx.value,
       pharmacistId: wpSelectedPharmacy.value,
       presUrl: prescriptionImageUrl.value,
+      presType: '0', // 标记为文字填写处方
     });
     if (res.code == 200 || res.code === '200') {
       message.success('处方提交成功');
@@ -1873,6 +1876,7 @@ const handleEditSuggestionConfirmName = async () => {
       adviceUrl: editSuggestionImageUrl.value,
       presUrl: editSuggestionDetail.value.presUrl,
       consultationMedicine: editSuggestionDetail.value.consultationMedicine,
+      presType: editSuggestionDetail.value.presType,
     };
 
     const res = await updateConsultation(params);
@@ -2000,6 +2004,7 @@ const handleEditPrescriptionConfirmName = async () => {
       state,
       presUrl: editPrescriptionImageUrl.value,
       adviceUrl: editPrescriptionDetail.value.adviceUrl,
+      presType: editPrescriptionDetail.value.presType,
     });
     if (res.code == 200) {
       message.success('修改成功');

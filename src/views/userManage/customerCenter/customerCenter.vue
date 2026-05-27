@@ -132,18 +132,6 @@
         </a-row>
         <a-row :gutter="16">
           <a-col :span="12">
-            <a-form-item :label="'醫院地址'" name="address">
-              <a-input v-model:value="addForm.address" :placeholder="t('public.input') + '醫院地址'"/>
-            </a-form-item>
-          </a-col>
-          <!-- <a-col :span="12">
-            <a-form-item :label="'大陸行醫資格証'" name="proQualifyCertificate">
-              <a-input v-model:value="addForm.proQualifyCertificate" :placeholder="t('public.input') + '大陸行醫資格証'" />
-            </a-form-item>
-          </a-col> -->
-        </a-row>
-        <a-row :gutter="16">
-          <a-col :span="12">
             <a-form-item :label="t('menu.PHARMACY')" name="nameChi">
               <a-select v-model:value="addForm.nameChi" :placeholder="t('placeholder.PHARMACY')" allow-clear
                         @change="handleHospitalChange">
@@ -176,8 +164,13 @@
               </a-upload>
             </a-form-item>
             <a-form-item label="医生头像" name="doctorPhotoFileList">
-              <a-upload v-model:file-list="addForm.doctorPhotoFileList" list-type="picture-card"
-                        :before-upload="beforeUpload" @preview="handlePreview">
+              <a-upload
+                  v-model:file-list="addForm.doctorPhotoFileList"
+                  list-type="picture-card"
+                  :customRequest="uploadDoctorPhoto"
+                  :show-upload-list="true"
+                  @preview="handlePreview"
+              >
                 <div v-if="addForm.doctorPhotoFileList.length < 1">
                   <plus-outlined/>
                   <div style="margin-top: 8px">上传头像</div>
@@ -259,12 +252,6 @@
               <a-input v-model:value="editForm.email" :placeholder="t('placeholder.g')"/>
             </a-form-item>
           </a-col>
-          <a-col :span="12">
-            <a-form-item label="機構" name="orgId">
-              <a-cascader v-model:value="editForm.orgId" :options="orgList" placeholder="請選擇機構"
-                          :field-names="{ label: 'label', value: 'id', children: 'children' }"/>
-            </a-form-item>
-          </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :span="12">
@@ -288,25 +275,6 @@
         </a-row>
         <a-row :gutter="16">
           <a-col :span="12">
-            <a-form-item :label="'香港醫生行醫証'" name="hkCertificate">
-              <a-input v-model:value="editForm.hkCertificate" :placeholder="t('public.input') + '香港醫生行醫証'"/>
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item :label="'大陸行醫資格証'" name="proQualifyCertificate">
-              <a-input v-model:value="editForm.proQualifyCertificate"
-                       :placeholder="t('public.input') + '大陸行醫資格証'"/>
-            </a-form-item>
-          </a-col>
-        </a-row>
-
-        <a-row :gutter="16">
-          <a-col :span="12">
-            <a-form-item :label="'醫院地址'" name="address">
-              <a-input v-model:value="editForm.address" :placeholder="t('public.input') + '醫院地址'"/>
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
             <a-form-item :label="t('menu.PHARMACY')" name="nameChi">
               <a-select v-model:value="editForm.nameChi" :placeholder="t('placeholder.PHARMACY')" allow-clear
                         @change="handleEditHospitalChange">
@@ -315,10 +283,6 @@
                 </a-select-option>
               </a-select>
             </a-form-item>
-          </a-col>
-        </a-row>
-        <a-row :gutter="16">
-          <a-col :span="12">
             <a-form-item :label="t('menu.aa')" name="aa">
               <a-input v-model:value="editForm.aa" :placeholder="t('placeholder.gg')"/>
             </a-form-item>
@@ -343,8 +307,13 @@
               </a-upload>
             </a-form-item>
             <a-form-item label="医生头像" name="doctorPhotoFileList">
-              <a-upload v-model:file-list="editForm.doctorPhotoFileList" list-type="picture-card"
-                        :before-upload="beforeUpload" @preview="handlePreview">
+              <a-upload
+                  v-model:file-list="editForm.doctorPhotoFileList"
+                  list-type="picture-card"
+                  :customRequest="uploadDoctorPhotoEdit"
+                  :show-upload-list="true"
+                  @preview="handlePreview"
+              >
                 <div v-if="editForm.doctorPhotoFileList.length < 1">
                   <plus-outlined/>
                   <div style="margin-top: 8px">上传头像</div>
@@ -442,11 +411,6 @@
               <span>{{ detailForm.email || '-' }}</span>
             </a-form-item>
           </a-col>
-          <a-col :span="12">
-            <a-form-item label="機構">
-              <span>{{ detailForm.orgName || '-' }}</span>
-            </a-form-item>
-          </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :span="12">
@@ -462,13 +426,6 @@
         </a-row>
         <a-row :gutter="16">
           <a-col :span="12">
-            <a-form-item label="醫院地址">
-              <span>{{ detailForm.address || '-' }}</span>
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-row :gutter="16">
-          <a-col :span="12">
             <a-form-item label="診所">
               <span>{{ detailForm.nameChi || '-' }}</span>
             </a-form-item>
@@ -476,18 +433,6 @@
           <a-col :span="12">
             <a-form-item label="專業所長">
               <span>{{ detailForm.aa || '-' }}</span>
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-row :gutter="16">
-          <a-col :span="12">
-            <a-form-item label="香港醫生行醫証">
-              <span>{{ detailForm.hkCertificate || '-' }}</span>
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item label="大陸行醫資格証">
-              <span>{{ detailForm.proQualifyCertificate || '-' }}</span>
             </a-form-item>
           </a-col>
         </a-row>
@@ -722,7 +667,6 @@ const addForm = reactive({
   licenseFileList: [],
   esignature: [],
   doctorPhotoFileList: [],
-  address: "",
   aa: "",
   position: null,
   practiceScope: "",
@@ -738,7 +682,6 @@ const addFormRules = {
   chineseSpecialty: [{required: true, message: "請輸入中文專業", trigger: "blur"}],
   englishSpecialty: [{required: true, message: "請輸入英文專業", trigger: "blur"}],
   phone: [{required: true, message: "請輸入手機號", trigger: "blur"}],
-  address: [{required: true, message: "請輸入醫院地址", trigger: "blur"}],
   email: [{required: true, message: "請輸入郵箱", trigger: "blur"}],
   printTitle: [{required: true, message: "請輸入打印標題", trigger: "blur"}],
   subject: [{required: true, message: "請輸入科目", trigger: "blur"}],
@@ -775,11 +718,7 @@ const editForm = reactive({
   practiceScope: "",
   multiPractice: "",
   professionValidity: [],
-  loginName: "",
-  orgId: null,
-  address: "",
-  hkCertificate: "",
-  proQualifyCertificate: ""
+  loginName: ""
 });
 const editformRef = ref(null);
 const editFormRules = {
@@ -787,9 +726,6 @@ const editFormRules = {
   chineseName: [{required: true, message: "请输入中英文名", trigger: "blur"}],
   chineseSpecialty: [{required: true, message: "请输入中文专业", trigger: "blur"}],
   englishSpecialty: [{required: true, message: "请输入英文专业", trigger: "blur"}],
-  hkCertificate: [{required: true, message: "香港醫生行醫証", trigger: "blur"}],
-  proQualifyCertificate: [{required: true, message: "大陸行醫資格証", trigger: "blur"}],
-  address: [{required: true, message: "请输入英文专业", trigger: "blur"}],
   phone: [{required: true, message: "请输入手机号", trigger: "blur"}],
   email: [{required: true, message: "请输入邮箱", trigger: "blur"}],
   printTitle: [{required: true, message: "请输入打印标题", trigger: "blur"}],
@@ -828,11 +764,7 @@ const detailForm = reactive({
   multiPractice: "",
   professionValidityStart: "",
   professionValidityEnd: "",
-  loginName: "",
-  address: "",
-  hkCertificate: "",
-  proQualifyCertificate: "",
-  orgName: ""
+  loginName: ""
 });
 const fileToBase64 = (file) => {
   return new Promise((resolve, reject) => {
@@ -863,6 +795,101 @@ const beforeUpload = async (file) => {
   }
   return false; // 阻止自动上传
 };
+// const uploadDoctorPhoto = async (file, serialNumber) => {
+//   return new Promise((resolve, reject) => {
+//     const formData = new FormData();
+//     formData.append('file', file);
+//     formData.append('serialNumber', serialNumber);
+//     const xhr = new XMLHttpRequest();
+//     xhr.open('POST', 'https://hqgy.gzxinxingyiyuan.com/filedec/file/upload');
+//     xhr.onload = () => {
+//       if (xhr.status === 200) {
+//         try {
+//           const response = JSON.parse(xhr.responseText);
+//           if (response.code === '1000') {
+//             resolve(response.data);
+//           } else {
+//             reject(new Error(response.message || '上传失败'));
+//           }
+//         } catch (error) {
+//           reject(new Error('解析响应失败'));
+//         }
+//       } else {
+//         reject(new Error('上传失败'));
+//       }
+//     };
+//     xhr.onerror = () => {
+//       reject(new Error('网络错误'));
+//     };
+//     xhr.send(formData);
+//   });
+// };
+const handleAddDoctorPhotoChange = async (fileList) => {
+  if (fileList.length > 0) {
+    const file = fileList[fileList.length - 1];
+    if (file.status === 'done' && !file.responseUrl) {
+      if (file.originFileObj) {
+        try {
+          message.loading('正在上传头像...', 0);
+          const phone = addForm.phone || '';
+          const responseUrl = await uploadDoctorPhoto(file.originFileObj, phone);
+          file.responseUrl = responseUrl;
+          file.url = responseUrl;
+          message.success('头像上传成功');
+        } catch (error) {
+          message.error('头像上传失败: ' + error.message);
+          addForm.doctorPhotoFileList = fileList.slice(0, -1);
+        }
+      }
+    }
+  }
+};
+const handleEditDoctorPhotoChange = async (fileList) => {
+  if (fileList.length > 0) {
+    const file = fileList[fileList.length - 1];
+    if (file.status === 'done' && !file.responseUrl) {
+      if (file.originFileObj) {
+        try {
+          message.loading('正在上传头像...', 0);
+          const phone = editForm.phone || '';
+          const responseUrl = await uploadDoctorPhoto(file.originFileObj, phone);
+          file.responseUrl = responseUrl;
+          file.url = responseUrl;
+          message.success('头像上传成功');
+        } catch (error) {
+          message.error('头像上传失败: ' + error.message);
+          editForm.doctorPhotoFileList = fileList.slice(0, -1);
+        }
+      }
+    }
+  }
+};
+
+
+const handleEditPhotoUpload = async (option) => {
+  const {file, onSuccess, onError} = option;
+  const isJpgOrPng = file.type === "image/jpeg" || file.type === "image/png";
+  if (!isJpgOrPng) {
+    message.error("只能上传 JPG/PNG 格式的图片！");
+    onError(new Error('只能上传 JPG/PNG 格式的图片'));
+    return;
+  }
+  const isLt2M = file.size / 1024 / 1024 < 2;
+  if (!isLt2M) {
+    message.error("图片大小不能超过 2MB！");
+    onError(new Error('图片大小不能超过 2MB'));
+    return;
+  }
+  try {
+    const phone = editForm.phone || '';
+    const responseUrl = await uploadDoctorPhoto(file, phone);
+    onSuccess({url: responseUrl}, file);
+    message.success('头像上传成功');
+  } catch (error) {
+    message.error('头像上传失败: ' + error.message);
+    onError(error);
+  }
+};
 const handlePreview = (file) => {
   previewImage.value = file.url || file.thumbUrl;
   previewVisible.value = true;
@@ -870,10 +897,6 @@ const handlePreview = (file) => {
 // 查看详情
 const showDetail = async (record) => {
   console.log(record.doctorId);
-  // 确保机构树已加载
-  if (!orgList.value.length) {
-    await getTree();
-  }
   try {
     const res = await selectDoctorDetaill({doctorId: record.doctorId});
     if (res.code === "200" && res.msg === "success") {
@@ -898,11 +921,6 @@ const showDetail = async (record) => {
       detailForm.professionValidityStart = data.professionValidityStart || "";
       detailForm.professionValidityEnd = data.professionValidityEnd || "";
       detailForm.loginName = data.loginName || "-";
-      detailForm.address = data.address || "-";
-      detailForm.hkCertificate = data.hkCertificate || "-";
-      detailForm.proQualifyCertificate = data.proQualifyCertificate || "-";
-      // 从机构树中查找机构名称
-      detailForm.orgName = data.orgId ? (findOrgName(data.orgId) || "-") : "-";
       detailModalVisible.value = true;
     } else {
       message.error("獲取詳情失敗");
@@ -1004,17 +1022,13 @@ const handleChannelCancel = () => {
   channelModalVisible.value = false;
 };
 const editRecord = async (record) => {
-  // 确保机构树已加载
-  if (!orgList.value.length) {
-    getTree();
-    doctorlist();
-    doctorlistsa();
-    getDoctorTitles();
-    getLoginAccountList();
-    getTree()
-  }
-
+  await doctorlist();
+  await doctorlistsa();
+  await getDoctorTitles();
+  await getLoginAccountList();
+  await getTree()
   try {
+
     const res = await selectDoctorDetaill({doctorId: record.doctorId});
     if (res.code === "200" && res.msg === "success") {
       console.log("获取医生详情数据:", res);
@@ -1041,19 +1055,6 @@ const editRecord = async (record) => {
       editForm.practiceScope = data.practiceScope || "";
       editForm.multiPractice = data.multiPractice || "";
       editForm.loginName = data.loginName || "";
-      editForm.address = data.address || "";
-      editForm.hkCertificate = data.hkCertificate || "";
-      editForm.proQualifyCertificate = data.proQualifyCertificate || "";
-      // 处理机构回显
-      console.log("后端返回的orgId:", data.orgId);
-      console.log("orgList:", orgList.value);
-      if (data.orgId) {
-        const path = findOrgPath(data.orgId);
-        console.log("查找到的路径:", path);
-        editForm.orgId = path || null;
-      } else {
-        editForm.orgId = null;
-      }
       // 处理执业有效期回显
       if (data.professionValidityStart && data.professionValidityEnd) {
         editForm.professionValidity = [data.professionValidityStart, data.professionValidityEnd];
@@ -1131,41 +1132,6 @@ const getTree = async () => {
     console.error(error);
   }
 };
-
-// 查找orgId在树中的路径，用于cascader回显
-const findOrgPath = (orgId, tree = orgList.value) => {
-  const targetId = Number(orgId); // 转换为数字
-  for (const node of tree) {
-    if (Number(node.id) === targetId) {
-      return [node.id];
-    }
-    if (node.children && node.children.length > 0) {
-      const childPath = findOrgPath(orgId, node.children);
-      if (childPath) {
-        return [node.id, ...childPath];
-      }
-    }
-  }
-  return null;
-};
-
-// 根据orgId查找机构名称
-const findOrgName = (orgId, tree = orgList.value) => {
-  const targetId = Number(orgId); // 转换为数字
-  for (const node of tree) {
-    if (Number(node.id) === targetId) {
-      return node.label;
-    }
-    if (node.children && node.children.length > 0) {
-      const name = findOrgName(orgId, node.children);
-      if (name) {
-        return name;
-      }
-    }
-  }
-  return null;
-};
-
 const showAddModal = () => {
   doctorlist();
   doctorlistsa();
@@ -1195,11 +1161,106 @@ const showAddModal = () => {
   addForm.orgId = null;
   selectedHospital.value = null; // 重置选中的门诊
 };
+import axios from "axios"
+
+const uploadDoctorPhoto = async (options) => {
+  const {file, onSuccess, onError} = options
+
+  try {
+    const formData = new FormData()
+
+    // 后端要求的参数
+    formData.append("file", file)
+    formData.append("serialNumber", addForm.serialNumber)
+
+    const res = await axios.post(
+        "https://hqgy.gzxinxingyiyuan.com/filedec/file/upload",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data"
+          }
+        }
+    )
+
+    console.log("上传返回：", res)
+
+
+    const imageUrl = res.data.data.data
+    console.log("图片地址：", imageUrl)
+    // 回显上传后的图片
+    addForm.doctorPhotoFileList = [
+      {
+        uid: file.uid,
+        name: file.name,
+        status: "done",
+        url: imageUrl
+      }
+    ]
+    console.log("图片回显：", addForm.doctorPhotoFileList)
+
+    message.success("上传成功")
+
+    // onSuccess(res.data.data.data)
+  } catch (error) {
+    console.error(error)
+
+    message.error("上传失败")
+
+    onError(error)
+  }
+}
+const uploadDoctorPhotoEdit = async (options) => {
+  const {file, onSuccess, onError} = options
+
+  try {
+    const formData = new FormData()
+
+    // 后端要求的参数
+    formData.append("file", file)
+    formData.append("serialNumber", editForm.serialNumber)
+
+    const res = await axios.post(
+        "https://hqgy.gzxinxingyiyuan.com/filedec/file/upload",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data"
+          }
+        }
+    )
+
+    console.log("上传返回：", res)
+
+
+    const imageUrl = res.data.data.data
+    console.log("图片地址：", imageUrl)
+    // 回显上传后的图片
+    editForm.doctorPhotoFileList = [
+      {
+        uid: file.uid,
+        name: file.name,
+        status: "done",
+        url: imageUrl
+      }
+    ]
+    console.log("图片回显：", editForm.doctorPhotoFileList)
+
+    message.success("上传成功")
+
+    // onSuccess(res.data.data.data)
+  } catch (error) {
+    console.error(error)
+
+    message.error("上传失败")
+
+    onError(error)
+  }
+}
 const handleAddSubmit = async () => {
   const isValid = await addformRef.value.validate();
   if (!isValid) return;
   console.log("表单数据:", addForm);
-  // return
   // 这里可以添加表单验证
   if (!addForm.chineseName || !addForm.englishName) {
     message.error("请填写姓名");
@@ -1210,6 +1271,7 @@ const handleAddSubmit = async () => {
     message.error("请上传医生头像");
     return;
   }
+  console.log("addForm", addForm.doctorPhotoFileList)
   try {
     // 将表单字段映射到API字段，没有的传空字符串
     const params = {
@@ -1234,26 +1296,25 @@ const handleAddSubmit = async () => {
       bankAcctNo: "",
       proQualifyCertificate: addForm.proQualifyCertificate || '',
       hkCertificate: addForm.hkCertificate || '',
-      // 修改：传门诊的 hospitalId、address、hospitalTel
+      // 修改：传门诊的 hospitalId、hospitalAddress、hospitalTel
       hospitalId: selectedHospital.value?.hospitalId || "",
-      // address: selectedHospital.value?.address || "",
+      hospitalAddress: selectedHospital.value?.hospitalAddress || "",
       hospitalTel: selectedHospital.value?.hospitalTel || "",
       enName: addForm.englishName,
       loginName: addForm.loginAccount,
       email: addForm.email,
       enPro: addForm.englishSpecialty,
       channelTag: "",
-      doctorPhoto: addForm.doctorPhotoFileList[0]?.thumbUrl || addForm.doctorPhotoFileList[0]?.url || "",
+      doctorPhoto: addForm.doctorPhotoFileList[0]?.url || "",
       position: addForm.position,
       practiceScope: addForm.practiceScope,
       multiPractice: addForm.multiPractice,
       professionValidityStart: addForm.professionValidity?.[0] || "",
       professionValidityEnd: addForm.professionValidity?.[1] || "",
       orgId: addForm.orgId?.length ? addForm.orgId[addForm.orgId.length - 1] : "",
-      address: addForm.address,
     };
     console.log(params)
-    return
+
     const res = await selectDoctoradd(params);
     console.log(res.data.message);
     if (res.code === "200" && res.msg === "success" && res.data.message === "新增成功") {
@@ -1295,11 +1356,10 @@ const handleEditSubmit = async () => {
       serialNumber: editForm.phone,
       depart: editForm.subject,
       profession: editForm.chineseSpecialty,
-      hkCertificate: editForm.hkCertificate || '',
       certification: editForm.aa || "",
       // mainlandFee: originalData?.mainlandFee || "",
       // hkFee: originalData?.hkFee || "",
-      proQualifyCertificate: editForm.proQualifyCertificate || "",
+      proQualifyCertificate: editForm.licenseFileList[0]?.thumbUrl || editForm.licenseFileList[0]?.url || "",
       esignature: editForm.esignature[0]?.thumbUrl || editForm.esignature[0]?.url || "",
       proQualifyName: originalData?.proQualifyName || "",
       banckAcctName: originalData?.banckAcctName || "",
@@ -1311,9 +1371,9 @@ const handleEditSubmit = async () => {
       fansNum: originalData?.fansNum || 0,
       retireState: originalData?.retireState || "",
       bankAcctNo: originalData?.bankAcctNo || "",
-      // 修改：传门诊的 hospitalId、address、hospitalTel
+      // 修改：传门诊的 hospitalId、hospitalAddress、hospitalTel
       hospitalId: selectedEditHospital.value?.hospitalId || originalData?.hospitalId || "",
-      // address: selectedEditHospital.value?.address || originalData?.address || "",
+      hospitalAddress: selectedEditHospital.value?.hospitalAddress || originalData?.hospitalAddress || "",
       hospitalTel: selectedEditHospital.value?.hospitalTel || originalData?.hospitalTel || "",
       enName: editForm.englishName,
       loginName: editForm.loginName,
@@ -1326,8 +1386,6 @@ const handleEditSubmit = async () => {
       multiPractice: editForm.multiPractice,
       professionValidityStart: editForm.professionValidity?.[0] || "",
       professionValidityEnd: editForm.professionValidity?.[1] || "",
-      orgId: editForm.orgId?.length ? editForm.orgId[editForm.orgId.length - 1] : "",
-      address: editForm.address,
     };
     const res = await selectDoctorupdateDoctor(params);
     if (res.code === "200" && res.data.message === "修改成功") {

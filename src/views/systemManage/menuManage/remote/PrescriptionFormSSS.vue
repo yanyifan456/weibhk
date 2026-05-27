@@ -74,7 +74,7 @@
 
                 </div>
                 <div style="font-size: 12px;  margin-bottom: 10px;">{{ detail.hospitalEnName || '' }}</div>
-                <div style="margin-top: 8px;margin-top: 100px;">單據編號：HK{{ detail.consultationId || '' }}</div>
+                <div style="margin-top: 8px;margin-top: 100px;">單據編號：{{ detail.formId || '' }}</div>
 
                 <div style="margin-top: 4px;">日期：&nbsp;{{ detail.createTime ? detail.createTime.slice(0, 10) :
                     'YYYY-MM-DD' }}</div>
@@ -136,15 +136,15 @@
                         <td style="border: 1px solid ; padding: 6px;">{{ item.name || '' }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.spec || '' }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.dosageForm || ''
-                        }}</td>
+                            }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.directionsRoute ||
                             '' }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.frenquency || ''
-                        }}</td>
+                            }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.duration || '' }}
                         </td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.medicineCun || ''
-                        }}</td>
+                            }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.specialPurpose ||
                             '' }}</td>
                     </tr>

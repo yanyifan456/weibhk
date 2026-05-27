@@ -16,17 +16,13 @@ const routes = [
   {
     path: "/login",
     name: "Login",
-    component: () => import("@/views/login/login.vue"),
+    component: () => import("@/views/Login/Login.vue"),
   },
   {
     path: "/home",
     name: "home",
-    meta: {
-      title: "menu.home",
-      requiresAuth: false,
-      icon: "https://www.gzxinxingyiyuan.com/images/image/1.png",
-    },
-    component: () => import("@/views/home/home.vue"),
+    meta: { title: "menu.home", requiresAuth: false, icon: "https://www.gzxinxingyiyuan.com/images/image/1.png" },
+    component: () => import("@/views/Home/Home.vue"),
   },
   {
     path: "/register",
