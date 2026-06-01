@@ -22,6 +22,16 @@
             {{ record.consultationId }}
           </a>
         </template>
+        <template v-if="column.key === 'orderuserid'">
+          <a style="color: #1890ff; cursor: pointer;" @click="showUserCaseModal(record)">
+            点击查看
+          </a>
+        </template>
+        <template v-else-if="column.key === 'userName'">
+          <a @click="showUserDetailModal(record)" style="color: #1890ff; cursor: pointer;">
+            {{ record.userName }}
+          </a>
+        </template>
         <template v-else-if="column.key === 'prescription'">
           <a @click="showPrescriptionModal(record)" style="color: #1890ff; cursor: pointer;">
             {{ record.consultationId }}
@@ -166,7 +176,7 @@
         <div style="text-align: right; margin-bottom: 4px; font-size: 13px;margin-top: 200px;">
           <span>醫生簽名：</span>
           <span v-if="!checkDetail.doctorSign">XXXXX</span>
-          <img v-else :src="checkDetail.doctorSign" style="height: 28px; width: auto; vertical-align: middle;"
+          <img v-else :src="checkDetail.doctorSign" style="height: 120px; width: auto; vertical-align: middle;"
             alt="医生签名" />
         </div>
 
@@ -196,11 +206,83 @@
       <PrescriptionForm :detail="dispensingDetail" />
 
     </a-modal>
+
+    <!-- 用户详情弹窗 -->
+    <a-modal v-model:open="userDetailModalVisible" title="用戶詳情" width="500px" :footer="null">
+      <a-descriptions :column="1" bordered size="small">
+        <a-descriptions-item label="姓名">{{ userDetailData.userName || '-' }}</a-descriptions-item>
+        <a-descriptions-item label="性別">{{ userDetailData.sex === '1' ? '男' : userDetailData.sex === '2' ? '女' : '-'
+        }}</a-descriptions-item>
+        <a-descriptions-item label="年齡">{{ userDetailData.age || '-' }}</a-descriptions-item>
+        <a-descriptions-item label="身高">{{ userDetailData.height ? userDetailData.height + ' cm' : '-'
+        }}</a-descriptions-item>
+        <a-descriptions-item label="體重">{{ userDetailData.weight ? userDetailData.weight + ' kg' : '-'
+        }}</a-descriptions-item>
+        <a-descriptions-item label="出生日期">{{ userDetailData.birthyDay || '-' }}</a-descriptions-item>
+        <a-descriptions-item label="既往病史">{{ userDetailData.phm || '-' }}</a-descriptions-item>
+        <a-descriptions-item label="用藥史">{{ userDetailData.medHistory || '-' }}</a-descriptions-item>
+        <a-descriptions-item label="過敏史">{{ userDetailData.allergyHistory || '-' }}</a-descriptions-item>
+      </a-descriptions>
+    </a-modal>
+    <!-- ========== 用户病例弹窗 ========== -->
+    <a-modal v-model:open="userCaseModalVisible" :title="$t('userCase.title')" width="900px" :footer="null">
+      <a-spin :spinning="userCaseLoading">
+        <div v-if="userCaseList.length === 0 && !userCaseLoading" style="text-align: center; padding: 40px;">
+          {{ $t('userCase.noData') }}
+        </div>
+        <div v-else>
+          <a-collapse v-model:activeKey="activeCaseKey" accordion>
+            <a-collapse-panel v-for="(item, index) in userCaseList" :key="String(item.id)"
+              :header="$t('userCase.record') + (index + 1) + ' - ' + item.createTime">
+              <a-descriptions :column="1" bordered size="small">
+                <a-descriptions-item :label="'病情描述'">{{ item.condDesc || '--'
+                }}</a-descriptions-item>
+                <a-descriptions-item :label="$t('userCase.historyCase')">{{ item.historyCase || '--'
+                }}</a-descriptions-item>
+                <a-descriptions-item :label="$t('userCase.historyDiagnosis')">{{ item.historyDiagnosis || '--'
+                }}</a-descriptions-item>
+                <a-descriptions-item :label="$t('userCase.historyReport')">{{ item.historyReport || '--'
+                }}</a-descriptions-item>
+                <a-descriptions-item :label="$t('userCase.casePhoto')">
+                  <a-image-preview-group v-if="item.casePhotoDecrypt?.length > 0">
+                    <a-space>
+                      <a-image v-for="(photo, idx) in item.casePhotoDecrypt" :key="idx" :width="80" :src="photo"
+                        :fallback="fallbackImage" />
+                    </a-space>
+                  </a-image-preview-group>
+                  <span v-else>--</span>
+                </a-descriptions-item>
+                <a-descriptions-item :label="$t('userCase.diagnosisPhoto')">
+                  <a-image-preview-group v-if="item.diagnosisPhotoDecrypt?.length > 0">
+                    <a-space>
+                      <a-image v-for="(photo, idx) in item.diagnosisPhotoDecrypt" :key="idx" :width="80" :src="photo"
+                        :fallback="fallbackImage" />
+                    </a-space>
+                  </a-image-preview-group>
+                  <span v-else>--</span>
+                </a-descriptions-item>
+                <a-descriptions-item :label="$t('userCase.reportPhoto')">
+                  <a-image-preview-group v-if="item.reportPhotoDecrypt?.length > 0">
+                    <a-space>
+                      <a-image v-for="(photo, idx) in item.reportPhotoDecrypt" :key="idx" :width="80" :src="photo"
+                        :fallback="fallbackImage" />
+                    </a-space>
+                  </a-image-preview-group>
+                  <span v-else>--</span>
+                </a-descriptions-item>
+                <a-descriptions-item :label="$t('userCase.createTime')">{{ item.createTime || '--'
+                }}</a-descriptions-item>
+              </a-descriptions>
+            </a-collapse-panel>
+          </a-collapse>
+        </div>
+      </a-spin>
+    </a-modal>
   </div>
 </template>
 
 <script setup>
-import { auditPharmacy, selectPharmacyAuditList, selectPharmacyAuditDetail, signature, selectprescriptiondetail } from '@/api/yyf'
+import { auditPharmacy, selectPharmacyAuditList, selectPharmacyAuditDetail, signature, selectprescriptiondetail, selectUserDetail, selectUserCaseList } from '@/api/yyf'
 import { ref, reactive, computed } from "vue";
 import { message } from "ant-design-vue";
 import { useI18n } from "vue-i18n";
@@ -208,6 +290,7 @@ import PatientInfoRow from '../../systemManage/menuManage/remote/PatientInfoRow.
 import HospitalHeader from '../../systemManage/menuManage/remote/HospitalHeader.vue';
 import PrescriptionForm from '../../systemManage/menuManage/remote/PrescriptionForm.vue';
 
+import axios from 'axios';
 
 // 国际化
 const { t } = useI18n();
@@ -236,10 +319,6 @@ const medicineColumns = [
 
   { title: "用法/途径", dataIndex: "directionsRoute", key: "directionsRoute", align: "center" },
   { title: "特殊用途", dataIndex: "specialPurpose", key: "specialPurpose", align: "center" },
-
-
-
-
 
 
   // { title: "单价", key: "price", align: "center", width: 120 },
@@ -291,6 +370,24 @@ const showPrescriptionModal = async (record) => {
   }
 };
 
+// ========== 用户详情弹窗 ==========
+const userDetailModalVisible = ref(false);
+const userDetailData = ref({});
+const showUserDetailModal = async (record) => {
+  console.log(record)
+  userDetailData.value = {};
+  userDetailModalVisible.value = true;
+  try {
+    // record.userserialnumber 
+    const res = await selectUserDetail({ userId: record.userId });
+    if (res.code == 200 || res.code === "200") {
+      userDetailData.value = res.data.data || {};
+    }
+  } catch (error) {
+    console.error("获取用户详情失败", error);
+  }
+};
+
 //==================签章===========
 
 const saveEdit = () => {
@@ -320,6 +417,8 @@ const handleMedicationSearch = () => message.info(`${t("button.search")} ${t("la
 const columns = computed(() => [
   { title: t("label.appointmentNumber"), dataIndex: "orderId", key: "orderId", align: "center" },
   { title: t("label.appointmentPerson"), dataIndex: "userName", key: "userName", align: "center" },
+  { title: '用户病歷', dataIndex: 'orderuserid', key: 'orderuserid', align: 'center' },
+
   { title: t("label.consultingDoctor"), dataIndex: "doctorName", key: "doctorName", align: "center" },
   { title: t("label.appointmentTime"), dataIndex: "orderTime", key: "orderTime", align: "center" },
   { title: "创建时间", dataIndex: "createTime", key: "createTime", align: "center" },
@@ -450,7 +549,8 @@ const confirmMedicinePrice = async () => {
         frenquency: item.frenquency,
         duration: item.duration,
         directionsRoute: item.directionsRoute,
-        specialPurpose: item.specialPurpose
+        specialPurpose: item.specialPurpose,
+        medicineId: item.medicineId
       }))
 
       // 第二个接口
@@ -550,6 +650,75 @@ const showConsultationReports = (record) => {
   getDetail(record.consultationId);
   reportModalVisible.value = true;
 };
+
+// -----------------------------------------------
+// ===== 用户病例弹窗 =====
+// -----------------------------------------------
+const userCaseModalVisible = ref(false);
+const userCaseLoading = ref(false);
+const userCaseList = ref([]);
+const activeCaseKey = ref([]);
+const fallbackImage = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgesAdwF3VP4LAAA=';
+const decryption = async (url) => {
+  try {
+    const res = await axios.get(
+      'https://hqgy.gzxinxingyiyuan.com/filedec/file/desfile/download',
+      { params: { url }, responseType: 'blob' }
+    );
+    return URL.createObjectURL(new Blob([res.data]));
+  } catch {
+    return '';
+  }
+};
+const parsePhotos = (photoStr) => {
+  if (!photoStr) return [];
+  try {
+    const arr = JSON.parse(photoStr);
+    return Array.isArray(arr) ? arr.filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+};
+const revokeImageUrls = () => {
+  userCaseList.value.forEach((item) => {
+    [
+      ...(item.casePhotoDecrypt || []),
+      ...(item.diagnosisPhotoDecrypt || []),
+      ...(item.reportPhotoDecrypt || []),
+    ].forEach((url) => URL.revokeObjectURL(url));
+  });
+};
+watch(() => userCaseModalVisible.value, (val) => { if (!val) revokeImageUrls(); });
+const showUserCaseModal = async (record) => {
+  console.log('showUserCaseModal', record);
+  userCaseModalVisible.value = true;
+  userCaseLoading.value = true;
+  userCaseList.value = [];
+  activeCaseKey.value = [];
+  try {
+    const res = await selectUserCaseList({
+      userId: String(record.userId),
+      orderId: String(record.orderId),
+    });
+    if (res.code == 200 || res.code === '200') {
+      const list = res.data?.data || [];
+      await Promise.all(list.map(async (item) => {
+        item.casePhotoDecrypt = await Promise.all(parsePhotos(item.casePhoto).map(decryption));
+        item.diagnosisPhotoDecrypt = await Promise.all(parsePhotos(item.diagnosisPhoto).map(decryption));
+        item.reportPhotoDecrypt = await Promise.all(parsePhotos(item.reportPhoto).map(decryption));
+      }));
+      userCaseList.value = list;
+      if (list.length > 0) activeCaseKey.value = [String(list[0].id)];
+    } else {
+      message.error(t('userCase.queryFailed'));
+    }
+  } catch (error) {
+    console.error('获取用户病例失败:', error);
+    message.error(t('userCase.queryFailed'));
+  } finally {
+    userCaseLoading.value = false;
+  }
+};
 </script>
 
 <style scoped lang="scss">
@@ -580,9 +749,13 @@ const showConsultationReports = (record) => {
   .consultation-report {
     .ant-table {
       .ant-table-tbody>tr>td {
-        padding: 8px 12px;
+        padding: 8px;
       }
     }
   }
+}
+
+.ant-table-row-striped {
+  background-color: #fafafa;
 }
 </style>

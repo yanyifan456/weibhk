@@ -259,143 +259,115 @@
             </a-modal>
 
             <!-- 诊费收据弹窗 -->
-            <a-modal v-model:open="receiptModalVisible" width="700px" :footer="null">
-                <div ref="receiptPrintRef" class="receipt-content">
-                    <div style="font-size: 28px; font-weight: bold; text-align: center; margin-bottom: 20px">
-                        {{ t("receipt.receiptTitle") }}
-                    </div>
+            <a-modal v-model:open="receiptModalVisible" width="600px" :footer="null">
+                <template #title>
+                    <div style="text-align: center; font-size: 18px; font-weight: bold;">廣州南沙信興互聯網醫院</div>
+                </template>
+                <div ref="receiptPrintRef" class="receipt-content"
+                    style="padding: 20px; border: 1px solid #e8e8e8; background: #fff;">
+                    <!-- 医院名称 -->
+                    <div style="font-size: 18px; font-weight: bold; margin-bottom: 16px;">醫療費用票據</div>
 
-                    <!-- 顶部logo和标题 -->
-                    <div class="receipt-header">
-                        <div class="logo-area">
-                            <div class="logo-icon">
-                                <img src="../../../assets/img/10.png" alt="" />
-                            </div>
-                            <span class="logo-text">{{ t("logo") }}</span>
-                        </div>
-                        <div class="receipt-number">
-                            <p>Receipt Number</p>
-                            <p>{{ t("receipt.receiptNumber") }}:</p>
-                            <p class="number-value">{{ receiptData.chargeId || "-" }}</p>
-                        </div>
-                    </div>
-
-                    <!-- 基本信息 -->
-                    <div class="receipt-info">
-                        <p>Date：</p>
-                        <p>Received from {{ t("receipt.receivedFrom") }}</p>
-                        <p>Diagnosis {{ t("receipt.diagnosis") }} Rhinitis</p>
+                    <!-- 收据基本信息 -->
+                    <div style="font-size: 13px; line-height: 2; margin-bottom: 16px;">
+                        <div>收據號碼：{{ receiptData.cnChargeId || 'CNR-00000000439' }}</div>
+                        <div>日期：{{ receiptData.payTime || '-' }}</div>
+                        <div>患者姓名：{{ receiptData.userName || '-' }}</div>
+                        <div>醫療建議單號：{{ receiptData.formId || '-' }}</div>
                     </div>
 
                     <!-- 支付费用 -->
-                    <div class="receipt-payment">
-                        <p class="payment-title">In Payment of{{ t("receipt.paymentOf") }}</p>
-                        <div class="payment-item">
-                            <div class="item-left">
-                                <a-checkbox disabled />
-                                <span>Consultation & Examination{{ t("receipt.consultationExamination") }}</span>
-                            </div>
-                            <div class="item-right">${{ receiptData.tradeFee || "-" }}</div>
+                    <div style="font-size: 13px; margin-bottom: 16px;">
+                        <div style="font-weight: bold; margin-bottom: 8px;">支付費用</div>
+                        <div style="display: flex; gap: 24px;margin-left: 320px;">
+                            <a-checkbox :checked="receiptData.paymentMethod === 'cash'" disabled>現金</a-checkbox>
+                            <a-checkbox style="margin-left: 14px;" :checked="receiptData.paymentMethod === 'online'"
+                                disabled>線上支付</a-checkbox>
                         </div>
-                        <div class="payment-item">
-                            <div class="item-left">
-                                <a-checkbox disabled />
-                                <span>Medication {{ t("receipt.medication") }}</span>
-                            </div>
-                            <div class="item-right">$</div>
-                        </div>
-                        <div class="payment-item">
-                            <div class="item-left">
-                                <a-checkbox disabled />
-                                <span>Health Screening{{ t("receipt.healthScreening") }}</span>
-                            </div>
-                            <div class="item-right">$</div>
-                        </div>
-                        <div class="payment-item">
-                            <div class="item-left">
-                                <a-checkbox disabled />
-                                <span>Laboratory Test {{ t("receipt.laboratoryTest") }}</span>
-                            </div>
-                            <div class="item-right">$</div>
-                        </div>
-                        <div class="payment-item">
-                            <div class="item-left">
-                                <a-checkbox disabled />
-                                <span>Imaging Fee</span>
-                            </div>
-                            <div class="item-right">$</div>
-                        </div>
-                        <div class="payment-item">
-                            <div class="item-left">
-                                <a-checkbox disabled />
-                                <span>Other Fee</span>
-                            </div>
-                            <div class="item-right">$</div>
-                        </div>
-                        <div class="payment-item">
-                            <div class="item-left">
-                                <a-checkbox disabled />
-                                <span>______________</span>
-                            </div>
-                            <div class="item-right">$</div>
+                        <div style="display: flex; gap: 24px;margin-left: 320px; margin-top: 4px;">
+                            <a-checkbox :checked="kosda">支付寶</a-checkbox>
+                            <a-checkbox :checked="receiptData.paymentMethod === 'wechat'" disabled>微信支付</a-checkbox>
                         </div>
                     </div>
 
-                    <!-- 总金额 -->
-                    <div class="receipt-total">
-                        <p class="total-title">Total Amount Received{{ t("receipt.totalAmount") }}</p>
-                        <div class="payment-methods">
-                            <a-checkbox disabled>Cash{{ t("receipt.cash") }}</a-checkbox>
-                            <a-checkbox disabled>Credit Card{{ t("receipt.creditCard") }}</a-checkbox>
-                            <a-checkbox disabled>EPS{{ t("receipt.eps") }}</a-checkbox>
-                        </div>
-                        <div class="other-method">
-                            <a-checkbox disabled>{{ t("receipt.other") }}</a-checkbox>
-                            <span>______________</span>
-                        </div>
-                        <div class="total-amount">
-                            <span style="border-bottom: 2px solid black">${{ receiptData.tradeFee || "-" }}</span>
-                        </div>
+                    <!-- 费用清单 -->
+                    <div style="margin-bottom: 16px;">
+                        <div style="font-size: 14px; font-weight: bold; margin-bottom: 8px;">費用清單</div>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                            <thead>
+                                <tr>
+                                    <th
+                                        style="border: 1px solid #d9d9d9; padding: 8px; text-align: center; background: #fafafa;">
+                                        項目名称</th>
+                                    <th
+                                        style="border: 1px solid #d9d9d9; padding: 8px; text-align: center; background: #fafafa;">
+                                        金額
+                                    </th>
+                                    <th
+                                        style="border: 1px solid #d9d9d9; padding: 8px; text-align: center; background: #fafafa;">
+                                        備注
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="border: 1px solid #d9d9d9; padding: 8px; text-align: center;">一般診療費</td>
+                                    <td style="border: 1px solid #d9d9d9; padding: 8px; text-align: center;">HKD {{
+                                        receiptData.tradeFee || '10.00' }}</td>
+                                    <td style="border: 1px solid #d9d9d9; padding: 8px; text-align: center;"></td>
+                                </tr>
+                                <tr>
+                                    <td style="border: 1px solid #d9d9d9; padding: 8px; text-align: center;">其他費用</td>
+                                    <td style="border: 1px solid #d9d9d9; padding: 8px; text-align: center;">
+                                        HKD&nbsp;&nbsp;0</td>
+                                    <td style="border: 1px solid #d9d9d9; padding: 8px; text-align: center;"></td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
 
-                    <!-- 签名区域 -->
-                    <div class="receipt-signature">
-                        <div class="signature-stamp">
-                            <div class="stamp-circle">
-                                <img style="width: 100px" src="../../../assets/img/11.png" alt="" />
+                    <!-- 合计 -->
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <span style="font-size: 14px; font-weight: bold;margin-bottom: 120px;">合計</span>
+                        <div style="text-align: right;">
+                            <div style="font-size: 18px; font-weight: bold;">HKD {{ receiptData.tradeFee || '15' }}
                             </div>
-                        </div>
-                        <p class="signature-text">Signature & Chop{{ t("receipt.signatureChop") }}</p>
-                        <div class="doctor-info">
-                            <p>Dr Francois Fong方陽 醫生</p>
-                            <p>MBBS(Hons), BMedSci(Hons), GradDipM</p>
-                            <p>MPM(Merit), FRACGP, CME Certified</p>
+                            <div style="display: flex;"> <img style="width: 120px; height: auto;"
+                                    src="../../../assets/img/13.jpg" alt="">
+                                <div style="font-size: 12px; color: #666;">廣州南沙信興互聯網醫院<br />（蓋財務章/公章）</div>
+                            </div>
+
+
                         </div>
                     </div>
 
-                    <!-- 底部医院信息 -->
-                    <div class="receipt-footer">
-                        <p class="hospital-name">{{ t("logo") }}</p>
-                        <p>{{ receiptData.address || "-" }}</p>
-                        <div class="contact-row">
-                            <span>{{ t("receipt.tel") }} {{ receiptData.contactPhone || "-" }}</span>
-                        </div>
-                        <div class="contact-row">
-                            <span>E-mail {{ receiptData.email || "-" }}</span>
-                            <span style="margin-left: auto">{{ receiptData.url || "neohealth.com.hk" }}</span>
-                        </div>
+                    <hr style="border: none; border-top: 1px solid #d9d9d9; margin: 16px 0;" />
+
+                    <!-- 注意事项 -->
+                    <div style="font-size: 12px; color: #666; line-height: 1.8; margin-bottom: 16px;">
+                        <div style="font-weight: bold; margin-bottom: 4px;">
+                            注：該票據僅做客戶付款証明使用，無法作為報銷憑據。處方藥物一經售出，概不退換。<br />請妥善保存此收據，以備查閲。請將藥物存放於陰涼</div>
+                    </div>
+
+                    <!-- 底部信息 -->
+                    <div style="font-size: 11px; color: #999; line-height: 1.8;">
+                        <div>地址：廣州市南沙區珠江街南江二路6號【自編6棟（9#樓）5層503】</div>
+                        <div>電話 13165755025</div>
+                        <div>網址 https://gbalifescience.cn</div>
                     </div>
                 </div>
+
+                <!-- 底部按钮 -->
                 <div style="margin-top: 20px; text-align: center">
                     <a-button style="margin-right: 16px" @click="handleReceiptExport">
-                        {{ t("receipt.export") }}
+                        導出
                     </a-button>
                     <a-button type="primary" @click="handleReceiptPrint">
-                        {{ t("receipt.print") }}
+                        打印
                     </a-button>
                 </div>
             </a-modal>
-
             <!-- 药物授权委托书弹窗 -->
             <a-modal v-model:open="attorneyModalVisible" width="700px" height="800px" :footer="null">
                 <div ref="attorneyPrintRef" class="attorney-content">
@@ -506,133 +478,180 @@
                 </a-form>
             </a-modal>
             <!-- 药费收据弹窗 -->
-            <a-modal v-model:open="drugFeeReceiptVisible" title="藥費收據" width="600px" :footer="null">
-                <div ref="drugFeeReceiptPrintRef" class="drug-fee-receipt-content">
+            <a-modal v-model:open="drugFeeReceiptVisible" width="600px" :footer="null">
+                <template #title>
+                    <div style="text-align: center;">
+                        <div style="font-size: 18px; font-weight: bold;">Receipt</div>
+                        <div style="font-size: 14px; color: #666;">藥費收據</div>
+                    </div>
+                </template>
+                <div ref="drugFeeReceiptPrintRef" class="drug-fee-receipt-content"
+                    style="padding: 20px; border: 1px solid #e8e8e8; background: #fff;">
                     <!-- 药房名称 -->
-                    <div style="font-size: 18px; font-weight: bold; margin-bottom: 20px;">香港華興藥房</div>
-
-                    <!-- 收据号码 -->
-                    <div
-                        style="display: flex; justify-content: flex-end; font-size: 12px; line-height: 1.9; margin-bottom: 8px;">
-                        <div style="text-align: right;">
-                            <div>Receipt Number</div>
-                            <div>收據號碼：{{ drugFeeReceiptData.hkChargeId || '-' }}</div>
-                            <div>單據編號：{{ drugFeeReceiptData.formId || '-' }}</div>
-                        </div>
+                    <div style="font-size: 18px; font-weight: bold; margin-bottom: 4px;text-align: center;">
+                        大灣區香港華興藥行有限公司</div>
+                    <div style="font-size: 12px; color: #666; margin-bottom: 8px;text-align: center;">GBA HK HUA XING
+                        MEDICINE
+                        LIMITED
                     </div>
 
-                    <!-- 日期和收款人 -->
-                    <div style="font-size: 13px; margin-bottom: 4px;">Date：{{ drugFeeReceiptData.receiptDate || '-' }}
+                    <!-- 地址 -->
+                    <div style="font-size: 14px; font-weight: bold; margin-bottom: 4px;text-align: center;">
+                        香港中環德輔道中19號環球大廈11樓1106室
                     </div>
-                    <div style="font-size: 13px; margin-bottom: 12px;">Received from 茲收到</div>
+                    <div style="font-size: 11px; color: #666; margin-bottom: 4px;text-align: center;">Unit 1106, 11th
+                        Floor,
+                        World-Wide
+                        House, No.19
+                        Des Voeux Road Central HK</div>
+                    <div style="font-size: 12px; margin-bottom: 16px;text-align: center;">Tel: (852) 31604886</div>
 
-                    <!-- 支付费用说明 -->
-                    <div style="font-size: 13px; font-weight: bold; margin-bottom: 6px;">In Payment of 支付費用明細</div>
-
-                    <!-- 药物费用明细标题 -->
-                    <div style="font-size: 13px; font-weight: bold; margin-bottom: 8px;">藥物費用明細(Drug cost breakdown)
+                    <!-- 基本信息 -->
+                    <div style="font-size: 13px; line-height: 1.8; margin-bottom: 16px;">
+                        <div>Date 日期：{{ drugFeeReceiptData.receiptDate || '-' }}</div>
+                        <div>Receipt No 收據編號：{{ drugFeeReceiptData.hkChargeId || '-' }}</div>
+                        <div>EPrescription處方單編號：{{ drugFeeReceiptData.formId || '-' }}</div>
+                        <div>Customer Name患者姓名：{{ drugFeeReceiptData.userName || '-' }}</div>
                     </div>
 
-                    <!-- 药物明细表格 -->
-                    <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 16px;">
+                    <!-- 药品清单标题 -->
+                    <div style="font-size: 14px; font-weight: bold; margin-bottom: 8px;">Items Purchased藥品清單：</div>
+
+                    <!-- 药品明细表格 -->
+                    <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 16px;">
                         <thead>
                             <tr>
                                 <th
-                                    style="border: 1px solid #ccc; padding: 5px 4px; text-align: center; background: #fff;">
-                                    藥物名稱<br /><span style="font-weight: normal;">(drug name)</span>
+                                    style="border: 1px solid #d9d9d9; padding: 6px 4px; text-align: center; background: #fafafa;">
+                                    產品描述<br /><span style="font-size: 10px; color: #666;">(Description)</span>
                                 </th>
                                 <th
-                                    style="border: 1px solid #ccc; padding: 5px 4px; text-align: center; background: #fff;">
-                                    規格<br /><span style="font-weight: normal;">(specification)</span>
+                                    style="border: 1px solid #d9d9d9; padding: 6px 4px; text-align: center; background: #fafafa;">
+                                    規格<br /><span style="font-size: 10px; color: #666;">(Quantity)</span>
                                 </th>
                                 <th
-                                    style="border: 1px solid #ccc; padding: 5px 4px; text-align: center; background: #fff;">
-                                    數量<br /><span style="font-weight: normal;">(quantity)</span>
+                                    style="border: 1px solid #d9d9d9; padding: 6px 4px; text-align: center; background: #fafafa;">
+                                    價格<br /><span style="font-size: 10px; color: #666;">(Amount (HKD))</span>
                                 </th>
                                 <th
-                                    style="border: 1px solid #ccc; padding: 5px 4px; text-align: center; background: #fff;">
-                                    行政費率%<br /><span style="font-weight: normal;">(Administrative tax rate)</span>
+                                    style="border: 1px solid #d9d9d9; padding: 6px 4px; text-align: center; background: #fafafa;">
+                                    行政稅率<br /><span style="font-size: 10px; color: #666;">(Administrative
+                                        Fee&Duties)</span>
                                 </th>
                                 <th
-                                    style="border: 1px solid #ccc; padding: 5px 4px; text-align: center; background: #fff;">
-                                    藥物價格<br /><span style="font-weight: normal;">(Drug prices)</span>
+                                    style="border: 1px solid #d9d9d9; padding: 6px 4px; text-align: center; background: #fafafa;">
+                                    數量<br /><span style="font-size: 10px; color: #666;">(Quantity)</span>
+                                </th>
+                                <th
+                                    style="border: 1px solid #d9d9d9; padding: 6px 4px; text-align: center; background: #fafafa;">
+                                    藥物編碼<br /><span style="font-size: 10px; color: #666;">(GBAP COINO)</span>
+                                </th>
+                                <th
+                                    style="border: 1px solid #d9d9d9; padding: 6px 4px; text-align: center; background: #fafafa;">
+                                    價格合計(HKD)<br /><span style="font-size: 10px; color: #666;">(Item Amount)</span>
                                 </th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-for="(med, idx) in (drugFeeReceiptData.medicines || [])" :key="idx">
-                                <td style="border: 1px solid #ccc; padding: 6px 4px; text-align: center;">{{ med.name ||
-                                    '-' }}</td>
-                                <td style="border: 1px solid #ccc; padding: 6px 4px; text-align: center;">{{ med.spec ||
-                                    '-' }}</td>
-                                <td style="border: 1px solid #ccc; padding: 6px 4px; text-align: center;">{{
-                                    med.quantity || '-' }}
-                                </td>
-                                <td style="border: 1px solid #ccc; padding: 6px 4px; text-align: center;">{{ med.taxRate
-                                    || '-' }}%
-                                </td>
-                                <td style="border: 1px solid #ccc; padding: 6px 4px; text-align: center;">{{ med.price
+                                <td style="border: 1px solid #d9d9d9; padding: 6px 4px; text-align: left;">{{ med.name
                                     || '-' }}
+                                </td>
+                                <td style="border: 1px solid #d9d9d9; padding: 6px 4px; text-align: center;">{{ med.spec
+                                    || '-' }}
+                                </td>
+                                <td style="border: 1px solid #d9d9d9; padding: 6px 4px; text-align: center;">HKD{{
+                                    med.price || '-'
+                                    }}</td>
+                                <td style="border: 1px solid #d9d9d9; padding: 6px 4px; text-align: center;">{{
+                                    med.taxRate || '-'
+                                    }}%</td>
+                                <td style="border: 1px solid #d9d9d9; padding: 6px 4px; text-align: center;">{{
+                                    med.quantity || '-'
+                                    }}</td>
+                                <td
+                                    style="border: 1px solid #d9d9d9; padding: 6px 4px; text-align: center; font-size: 10px;">
+                                    {{
+                                        med.medicineId || '-' }}</td>
+                                <td style="border: 1px solid #d9d9d9; padding: 6px 4px; text-align: right;">
+                                    HKD {{
+                                        (
+                                            Number(med.price || 0) +
+                                            Number(med.customDuty || 0)
+                                        ).toFixed(2)
+                                    }}
                                 </td>
                             </tr>
                             <tr v-if="!drugFeeReceiptData.medicines || drugFeeReceiptData.medicines.length === 0">
-                                <td colspan="5"
-                                    style="border: 1px solid #ccc; padding: 10px; text-align: center; color: #999;">
-                                    暫無藥品記錄</td>
+                                <td colspan="7"
+                                    style="border: 1px solid #d9d9d9; padding: 10px; text-align: center; color: #999;">
+                                    暫無藥品記錄
+                                </td>
                             </tr>
                         </tbody>
                     </table>
 
-                    <!-- 物流费 -->
-                    <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
-                        <span>物流費</span>
-                        <span style="font-weight: bold;">{{ drugFeeReceiptData.logisticsFee ? '$' +
-                            drugFeeReceiptData.logisticsFee :
-                            '-' }}</span>
-                    </div>
-                    <hr style="border: none; border-top: 1px solid #ccc; margin: 8px 0;" />
-
-                    <!-- 总金额 -->
-                    <div
-                        style="display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; margin-bottom: 40px;">
-                        <span>Total Amount Received總數</span>
-                        <span>{{ drugFeeReceiptData.totalAmount ? '$' + drugFeeReceiptData.totalAmount : '-' }}</span>
-                    </div>
-
-                    <!-- 签名盖章区域 -->
-                    <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
-                        <div style="text-align: right; min-width: 180px;">
-                            <div class="stamp-circle">
-                                <img style="width: 100px" src="../../../assets/img/11.png" alt="" />
-                            </div>
-                            <div
-                                style="font-size: 12px; margin-bottom: 4px;border-top: 1px solid #333;padding-top: 4px;width: 160px;margin-left: 25px;">
-                                Signature
-                                &amp;
-                                Chop簽名及蓋印
-                            </div>
-                            <div class="stamp-circle">
-                                <img style="width: 130px" src="../../../assets/img/12.png" alt="" />
-                            </div>
+                    <!-- 费用汇总 -->
+                    <div style="font-size: 13px; margin-bottom: 8px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span>Subtotal小計</span>
+                            <span style="font-weight: bold;">HKD {{
+                                (
+                                    (Number(drugFeeReceiptData.totalAmount) || 0) -
+                                    (Number(drugFeeReceiptData.logisticsFee) || 0)
+                                ).toFixed(2)
+                            }} </span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span>Shipping Fee物流費用</span>
+                            <span style="font-weight: bold;">HKD {{ drugFeeReceiptData.logisticsFee || '-' }}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px;">
+                            <span>TOTAL AMOUNT總計</span>
+                            <span>HKD {{ drugFeeReceiptData.totalAmount || '-' }}</span>
                         </div>
                     </div>
 
-                    <hr style="border: none; border-top: 1.5px solid #333; margin: 12px 0 8px;" />
-
-                    <!-- 底部诊所信息 -->
-                    <div style="font-size: 12px; line-height: 1.9;">
-                        <div style="font-weight: bold; margin-bottom: 2px;">Neo-Health Medical Centre 創健醫中心</div>
-                        <div>Unit 1106, 11th Floor, World-Wide House, No.19 Des Voeux Road Central, HK</div>
-                        <div>香港中環德輔道中19號環球大廈11樓1106室</div>
-                        <div style="display: flex; gap: 40px;">
-                            <span>電話 Tel (852) 3160 4886</span>
-                            <span>傳真 Fax (852) 3160 4887</span>
+                    <!-- 支付方式 -->
+                    <div style="font-size: 13px; margin-bottom: 16px;">
+                        <div style="margin-bottom: 8px;">Payment Method 支付方式</div>
+                        <div style="display: flex; gap: 24px;margin-left: 210px;">
+                            <a-checkbox :checked="drugFeeReceiptData.paymentMethod === 'cash'"
+                                disabled>Cash現金</a-checkbox>
+                            <a-checkbox :checked="drugFeeReceiptData.paymentMethod === 'online'" disabled>Online
+                                Payment線上支付</a-checkbox>
                         </div>
-                        <div style="display: flex; justify-content: space-between;">
-                            <span>電郵 E-mail &nbsp;neo@neohealth.com.hk</span>
-                            <span>neohealth.com.hk</span>
+                        <div style="display: flex; gap: 24px;margin-left: 210px; margin-top: 4px;">
+                            <a-checkbox :checked="kosda">Alipay支付寶</a-checkbox>
+                            <a-checkbox :checked="drugFeeReceiptData.paymentMethod === 'wechat'" disabled>WeChat
+                                Pay微信支付</a-checkbox>
                         </div>
+                        <img src="../../../assets/img/14.png" alt="logo"
+                            style="width: 100px;margin-left: 0px;margin-top: -180px;" />
                     </div>
+
+                    <hr style="border: none; border-top: 1px solid #d9d9d9; margin: 16px 0;" />
+
+                    <!-- 感谢语 -->
+                    <div style="font-size: 14px; font-weight: bold; margin-bottom: 4px;">多謝惠顧！</div>
+                    <div style="font-size: 12px; margin-bottom: 12px;">Thank you for your purchase!</div>
+
+                    <!-- 注意事项 -->
+                    <div style="font-size: 11px; color: #666; line-height: 1.6;">
+                        <div style="font-weight: bold; margin-bottom: 4px;">Notes注意:</div>
+                        <div>-This receipt is only for customer payment proof and cannot be used as a reimbursement
+                            voucher</div>
+                        <div>該票據僅做客戶付款証明使用，無法作為報銷憑據</div>
+                        <div>- Medications are non-refundable</div>
+                        <div>藥物一經售出，概不退換。</div>
+                        <div>- Please keep this receipt for your records</div>
+                        <div>請妥善保存此收據，以備查閲。</div>
+                        <div>- Store medications in a cool, dry place</div>
+                        <div>請將藥物存放于陰涼干燥處。</div>
+
+
+                    </div>
+
                 </div>
 
                 <!-- 底部按钮 -->
@@ -713,7 +732,7 @@
                         <span>醫生簽名：</span>
                         <span v-if="!checkDetail.doctorSign">XXXXX</span>
                         <img v-else :src="checkDetail.doctorSign"
-                            style="height: 28px; width: auto; vertical-align: middle;" alt="医生签名" />
+                            style="height: 120px; width: auto; vertical-align: middle;" alt="医生签名" />
                     </div>
 
                     <!-- ===== 插槽：操作区 ===== -->
@@ -763,7 +782,7 @@ import aaa from './PrescriptionForm.vue';
 import HospitalHeader from '../../systemManage/menuManage/remote/HospitalHeader.vue';
 import PrescriptionForm from '../../systemManage/menuManage/remote/PrescriptionForm.vue';
 import PatientInfoRow from '../../systemManage/menuManage/remote/PatientInfoRow.vue';
-
+const kosda = ref(true);
 const { t, locale } = useI18n();
 const props = defineProps({
     detail: {
@@ -829,8 +848,8 @@ const columns = computed(() => [
     { title: t("receipt.orderStatus"), dataIndex: "tradeStatus", key: "tradeStatus", align: "center" },
     // { title: t("receipt.prescription"), dataIndex: "consultationId", key: "consultationId", align: "center" },
     { title: t("receipt.receiptTitle"), dataIndex: "tradeId", key: "receiptView", align: "center" },
-    { title: t("receipt.attorneyTitle"), dataIndex: "tradeId", key: "attorneyBook", align: "center" },
     { title: '藥費收據', dataIndex: "tradeId", key: "drugFeeReceipt", align: "center" },
+    { title: t("receipt.attorneyTitle"), dataIndex: "tradeId", key: "attorneyBook", align: "center" },
 
     { title: "建議單", dataIndex: "consultationId", key: "consultationReport", align: "center" },
     { title: "處方單", dataIndex: "consultationId", key: "prescriptionNew", align: "center" },
@@ -1248,6 +1267,7 @@ const showDrugFeeReceiptModal = (record) => {
     console.log('showDrugFeeReceiptModal', record);
     drugFeeReceiptData.value = {
         formId: record.formId || '',
+        userName: record.userName || '',
         hkChargeId: record.hkChargeId || '',
         receiptNumber: record.receiptNumber || '',
         receiptCode: record.receiptCode || '',
@@ -1257,14 +1277,17 @@ const showDrugFeeReceiptModal = (record) => {
                 name: m.name || '',
                 spec: m.spec || '',
                 quantity: m.medicineCun || m.quantity || '',
-                taxRate: m.taxRate || '15%',
-                price: m.price ? '$' + m.price : '',
+                taxRate: m.taxRate,
+                price: m.price,
+                customDuty: m.customDuty,
+                medicineId: m.medicineId || '',
             }))
             : [],
         logisticsFee: record.logisticsFee || '',
-        totalAmount: record.totalAmount || record.tradeFee || '',
+        totalAmount: record.tradeFee || '',
         stampImg: record.stampImg || '',
         doctorTitle: record.doctorTitle || '',
+        totalPrice: record.totalPrice
     };
     drugFeeReceiptVisible.value = true;
 };

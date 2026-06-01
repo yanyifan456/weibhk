@@ -21,14 +21,18 @@
         </a-form-item>
       </a-form>
     </a-card>
-
     <!-- ========== 数据表格 ========== -->
     <a-table :columns="columns" :data-source="tableData" :pagination="pagination" row-key="id" :scroll="{ y: 470 }"
       @change="changePage">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'orderuserid'">
           <a style="color: #1890ff; cursor: pointer;" @click="showUserCaseModal(record)">
-            {{ record.orderuserid }}
+            点击查看
+          </a>
+        </template>
+        <template v-else-if="column.key === 'username'">
+          <a @click="showUserDetailModal(record)" style="color: #1890ff; cursor: pointer;">
+            {{ record.username }}
           </a>
         </template>
         <template v-else-if="column.key === 'consultationid'">
@@ -49,10 +53,11 @@
           </a-button>
         </template>
         <template v-else-if="column.key === 'action'">
-          <a-button type="link" :disabled="record.operationType !== 'CONSULT'" @click="showConsultationModal(record)">
+          <a-button type="link" @click="showConsultationModal(record)" :disabled="record.operationType !== 'CONSULT'">
             {{ $t('button.consultation') }}
           </a-button>
         </template>
+        <!-- :disabled="record.operationType !== 'CONSULT'" -->
         <template v-else-if="column.key === 'editSuggestion'">
           <a-button type="link" :disabled="!['2', '7'].includes(String(record.state))"
             @click="openEditSuggestionModal(record)">
@@ -71,7 +76,6 @@
         </template>
       </template>
     </a-table>
-
     <!-- ========== 编辑弹窗（updateConsultation） ========== -->
     <a-modal v-model:open="editModalVisible" :title="$t('button.edit')" width="600px" @ok="saveEdit"
       @cancel="editModalVisible = false">
@@ -111,7 +115,6 @@
       <ConfirmModal v-model:step1Visible="editConfirmSignVisible" v-model:step2Visible="editConfirmNameVisible"
         step1Title="确认签署" step1Text="您确认签署？" step2Title="确认签字" step2Text="您确认签字？" @confirm="handleEditConfirmName" />
     </a-modal>
-
     <!-- ========== 用户病例弹窗 ========== -->
     <a-modal v-model:open="userCaseModalVisible" :title="$t('userCase.title')" width="900px" :footer="null">
       <a-spin :spinning="userCaseLoading">
@@ -123,6 +126,8 @@
             <a-collapse-panel v-for="(item, index) in userCaseList" :key="String(item.id)"
               :header="$t('userCase.record') + (index + 1) + ' - ' + item.createTime">
               <a-descriptions :column="1" bordered size="small">
+                <a-descriptions-item :label="'病情描述'">{{ item.condDesc || '--'
+                }}</a-descriptions-item>
                 <a-descriptions-item :label="$t('userCase.historyCase')">{{ item.historyCase || '--'
                 }}</a-descriptions-item>
                 <a-descriptions-item :label="$t('userCase.historyDiagnosis')">{{ item.historyDiagnosis || '--'
@@ -164,7 +169,6 @@
         </div>
       </a-spin>
     </a-modal>
-
     <!-- ========== 会诊弹窗（insertConsultation） ========== -->
     <a-modal v-model:open="consultationModalVisible" destroyOnClose title="醫療建議單" width="65%" :footer="null"
       style="transform: translateX(300px);">
@@ -279,7 +283,7 @@
             </tbody>
           </table>
           <div style="text-align: right; font-size: 13px;">醫生簽名：<img :src="detailsss.doctorSign"
-              style="height: 28px; width: auto; vertical-align: middle;" alt="医生签名" /></div>
+              style="height: 120px; width: auto; vertical-align: middle;" alt="医生签名" /></div>
 
           <hr style="border: none; border-top: 1.5px solid; margin: 10px 0 6px;" />
           <div style="display: flex; justify-content: space-between; font-size: 12px; ">
@@ -301,7 +305,6 @@
         <p style="font-size: 16px; text-align: center; padding: 12px 0;">您確認簽名？</p>
       </a-modal>
     </a-modal>
-
     <!-- ========== 会诊报告详情弹窗 ========== -->
     <a-modal v-model:open="reportModalVisible" title="" width="60%" :footer="null">
       <div class="consultation-report">
@@ -355,7 +358,7 @@
         <div style="text-align: right; margin-bottom: 4px; font-size: 13px;margin-top: 200px;">
           <span>醫生簽名：</span>
           <span v-if="!checkDetail.doctorSign">XXXXX</span>
-          <img v-else :src="checkDetail.doctorSign" style="height: 28px; width: auto; vertical-align: middle;"
+          <img v-else :src="checkDetail.doctorSign" style="height: 120px; width: auto; vertical-align: middle;"
             alt="医生签名" />
         </div>
 
@@ -377,13 +380,11 @@
         </div>
       </div>
     </a-modal>
-
     <!-- ========== 查看处方单弹窗 ========== -->
     <a-modal v-model:open="prescriptionModalVisible" title="" width="60%" :footer="null"
       :bodyStyle="{ padding: '32px 40px' }">
       <PrescriptionForm :detail="dispensingDetail" />
     </a-modal>
-
     <!-- ========== 选择填写方式弹窗（文字/图片） ========== -->
     <a-modal v-model:open="uploadTypeVisible" title="选择填写方式" :width="360" :footer="null"
       @cancel="uploadTypeVisible = false">
@@ -397,7 +398,6 @@
         </a-button>
       </div>
     </a-modal>
-
     <!-- ========== 图片上传处方弹窗 ========== -->
     <a-modal v-model:open="imgPrescriptionVisible" title="图片上传处方" :width="520" :footer="null" destroyOnClose>
       <div style="padding: 16px 0;">
@@ -445,7 +445,6 @@
         <p style="font-size: 16px; text-align: center; padding: 12px 0;">您確認簽名？</p>
       </a-modal>
     </a-modal>
-
     <!-- ========== 填写处方弹窗（文字） ========== -->
     <a-modal v-model:open="writePrescriptionVisible" title="填写处方" width="60%" :footer="null"
       :bodyStyle="{ padding: '32px 40px' }" destroyOnClose>
@@ -471,23 +470,21 @@
       </PrescriptionFormSSS>
       <!-- ========== 填写处方 - 第一步确认（预览处方单 + 截图上传） ========== -->
       <a-modal v-model:open="wpConfirmSignVisible" title="確認簽署處方單" width="60%" ok-text="確定" cancel-text="取消"
-               :confirm-loading="prescriptionUploading" @ok="handlePrescriptionStep1Ok" @cancel="wpConfirmSignVisible = false">
+        :confirm-loading="prescriptionUploading" @ok="handlePrescriptionStep1Ok" @cancel="wpConfirmSignVisible = false">
         <p style="color: #c0392b; font-size: 13px; margin-bottom: 12px;">請確認以下處方單內容，點擊確定後將生成圖片並提交。</p>
         <div ref="prescriptionPreviewRef"
-             style="background:#fff; padding:24px 28px; border:1px solid #eee; border-radius:4px; overflow:visible;">
+          style="background:#fff; padding:24px 28px; border:1px solid #eee; border-radius:4px; overflow:visible;">
           <PrescriptionFormSSS :detail="writePrescriptionDetail" />
         </div>
       </a-modal>
 
       <!-- 填写处方 - 第二步确认（独立，在 modal 外） -->
       <a-modal v-model:open="wpConfirmNameVisible" title="確認簽名" :width="360" ok-text="確定" cancel-text="取消"
-               @ok="handleWpConfirmName" @cancel="wpConfirmNameVisible = false">
+        @ok="handleWpConfirmName" @cancel="wpConfirmNameVisible = false">
         <p style="font-size: 16px; text-align: center; padding: 12px 0;">您確認簽名？</p>
       </a-modal>
 
     </a-modal>
-
-
     <!-- ========== 修改建议单弹窗（state=2/7） ========== -->
     <a-modal v-model:open="editSuggestionModalVisible" destroyOnClose title="修改建議單" width="60%" :footer="null"
       style="transform: translateX(350px);">
@@ -592,7 +589,7 @@
             </tbody>
           </table>
           <div style="text-align: right; font-size: 13px;">醫生簽名：<img :src="editSuggestionDetail.doctorSign"
-              style="height: 28px; width: auto; vertical-align: middle;" alt="医生签名" /></div>
+              style="height: 120px; width: auto; vertical-align: middle;" alt="医生签名" /></div>
           <hr style="border: none; border-top: 1.5px solid ; margin: 10px 0 6px;" />
           <div style="display: flex; justify-content: space-between; font-size: 12px; ">
             <div>
@@ -615,8 +612,6 @@
       </a-modal>
 
     </a-modal>
-
-
     <!-- ========== 修改处方单弹窗（state=6） ========== -->
     <a-modal v-model:open="editPrescriptionModalVisible" title="修改處方單" width="1100px" :footer="null"
       :bodyStyle="{ padding: '32px 40px' }" destroyOnClose>
@@ -668,14 +663,27 @@
         <p style="font-size: 16px; text-align: center; padding: 12px 0;">您確認簽名？</p>
       </a-modal>
     </a-modal>
-
-
+    <!-- 用户详情弹窗 -->
+    <a-modal v-model:open="userDetailModalVisible" title="用戶詳情" width="500px" :footer="null">
+      <a-descriptions :column="1" bordered size="small">
+        <a-descriptions-item label="姓名">{{ userDetailData.userName || '-' }}</a-descriptions-item>
+        <a-descriptions-item label="性別">{{ userDetailData.sex === '1' ? '男' : userDetailData.sex === '2' ? '女' : '-'
+        }}</a-descriptions-item>
+        <a-descriptions-item label="年齡">{{ userDetailData.age || '-' }}</a-descriptions-item>
+        <a-descriptions-item label="身高">{{ userDetailData.height ? userDetailData.height + ' cm' : '-'
+        }}</a-descriptions-item>
+        <a-descriptions-item label="體重">{{ userDetailData.weight ? userDetailData.weight + ' kg' : '-'
+        }}</a-descriptions-item>
+        <a-descriptions-item label="出生日期">{{ userDetailData.birthyDay || '-' }}</a-descriptions-item>
+        <a-descriptions-item label="既往病史">{{ userDetailData.phm || '-' }}</a-descriptions-item>
+        <a-descriptions-item label="用藥史">{{ userDetailData.medHistory || '-' }}</a-descriptions-item>
+        <a-descriptions-item label="過敏史">{{ userDetailData.allergyHistory || '-' }}</a-descriptions-item>
+      </a-descriptions>
+    </a-modal>
   </div>
-
   <!-- 视频通话组件（固定定位，全局显示） -->
   <TUICallKit style="width: 600px; height: 850px; position: fixed; top: 10%; left: 1%; z-index: 9999;" />
 </template>
-
 <script setup>
 // ===== 第三方依赖 =====
 import { ref, reactive, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
@@ -686,7 +694,6 @@ import axios from 'axios';
 import html2canvas from 'html2canvas';
 import { TUICallKit, TUICallKitAPI, CallMediaType } from '@trtc/calls-uikit-vue';
 import * as GenerateTestUserSig from '@/debug/GenerateTestUserSig-es';
-
 // ===== API =====
 import {
   selectPharmacyList,
@@ -701,7 +708,8 @@ import {
   asadasdq,
   getuserorderList,
   presConsultation,
-  getfirstpreDetail
+  getfirstpreDetail,
+  selectUserDetail
 } from '@/api/yyf';
 import { startRecording, stopRecording } from '@/api/video';
 import {
@@ -710,17 +718,13 @@ import {
   updateConsultation,
 } from '@/api/api1';
 import { detail } from '@/api/yyf';
-
 // ===== 封装的子组件 =====
 import PrescriptionForm from './PrescriptionForm.vue';
 import HospitalHeader from './HospitalHeader.vue';
 import ConfirmModal from './ConfirmModal.vue';
 import MedicineSelector from './MedicineSelector.vue';
 import PrescriptionFormSSS from './PrescriptionFormSSS.vue';
-
-
 import PrescriptionForms from './PrescriptionForms.vue';
-
 import PatientInfoRow from './PatientInfoRow.vue';
 import PrescriptionUploadTips from './PrescriptionUploadTips.vue';
 // ===== 封装的 Composables =====
@@ -753,7 +757,6 @@ const getlist = async () => {
   }
 };
 getlist();
-
 // -----------------------------------------------
 // 搜索表单
 // -----------------------------------------------
@@ -763,21 +766,20 @@ const searchForm = reactive({
   appointmentTime: '',
   status: undefined,
 });
-
 const handleSearch = () => getlists();
 const handleReset = () => {
   Object.keys(searchForm).forEach((k) => (searchForm[k] = k === 'status' ? undefined : ''));
   searchForm.appointmentTime = null;
   getlists();
 };
-
 // -----------------------------------------------
 // 表格列定义
 // -----------------------------------------------
 const columns = computed(() => [
-  { title: '用户病歷', dataIndex: 'orderuserid', key: 'orderuserid', align: 'center' },
   { title: t('label.appointmentNumber'), dataIndex: 'orderid', key: 'orderid', align: 'center' },
   { title: t('label.appointmentPerson'), dataIndex: 'username', key: 'username', align: 'center' },
+  { title: '用户病歷', dataIndex: 'orderuserid', key: 'orderuserid', align: 'center' },
+
   { title: t('label.consultingDoctor'), dataIndex: 'doctorname', key: 'doctorname', align: 'center' },
   { title: t('label.appointmentTime'), dataIndex: 'ordertime', key: 'ordertime', align: 'center' },
   { title: t('label.consultationNumber'), dataIndex: 'consultationid', key: 'consultationid', align: 'center' },
@@ -789,7 +791,6 @@ const columns = computed(() => [
   { title: '修改處方單', key: 'editPrescription', width: 120, align: 'center' },
   { title: '发送处方', key: 'viewUserCase', width: 120, align: 'center' },
 ]);
-
 // -----------------------------------------------
 // 表格数据 + 分页
 // -----------------------------------------------
@@ -803,18 +804,15 @@ const pagination = reactive({
   showQuickJumper: true,
   showTotal: (total) => `${t('button.total')} ${total} ${t('label.records')}`,
 });
-
 const changePage = (pgn) => {
   pagination.current = pgn.current;
   pagination.pageSize = pgn.pageSize;
   getlists();
 };
-
 const getlists = async () => {
   const roleType = sessionStorage.getItem('roleType');
   const username = sessionStorage.getItem('username');
   const loginName = ['admin', 'superuser'].includes(roleType) ? '' : username;
-
   const res = await selectMidUserOrderList({
     orderUserName: searchForm.appointmentPerson,
     doctorName: searchForm.consultingDoctor,
@@ -825,14 +823,28 @@ const getlists = async () => {
     roleType,
     loginName,
   });
-
   if (res.code === '200') {
     tableData.value = res.data.data;
     totalCount.value = res.data.total;
   }
 };
 getlists();
-
+//-------用户详情-----------
+const userDetailModalVisible = ref(false);
+const userDetailData = ref({});
+const showUserDetailModal = async (record) => {
+  console.log(record)
+  userDetailData.value = {};
+  userDetailModalVisible.value = true;
+  try {
+    const res = await selectUserDetail({ userId: record.userid });
+    if (res.code == 200 || res.code === "200") {
+      userDetailData.value = res.data.data || {};
+    }
+  } catch (error) {
+    console.error("获取用户详情失败", error);
+  }
+};
 // -----------------------------------------------
 // 发送处方
 // -----------------------------------------------
@@ -849,7 +861,6 @@ const Sendprescription = async (record) => {
     message.error('发送失败');
   }
 };
-
 // -----------------------------------------------
 // ===== TUICallKit 视频通话 =====
 // -----------------------------------------------
@@ -857,7 +868,6 @@ const roomId = ref('');
 const callId = ref('');
 const recordId = ref('');
 const callerUserID = ref(sessionStorage.getItem('username'));
-
 const init = async () => {
   const { userSig, SDKAppID } = GenerateTestUserSig.genTestUserSig({ userID: callerUserID.value });
   await TUICallKitAPI.init({ userID: callerUserID.value, userSig, SDKAppID });
@@ -871,7 +881,6 @@ const init = async () => {
     console.error('设置昵称失败:', error);
   }
 };
-
 const startConsultation = async () => {
   const calleeUserID = selectedConsultation.value.userserialnumber;
   try {
@@ -891,7 +900,6 @@ const startConsultation = async () => {
     if (el) el.style.display = 'none';
   }
 };
-
 const handleCallBegin = async (params) => {
   if (!params) return;
   roomId.value = params.roomID;
@@ -908,7 +916,6 @@ const handleCallBegin = async (params) => {
   }
   if (params.callId) callId.value = params.callId;
 };
-
 const handleCallEnd = async () => {
   if (recordId.value) {
     try {
@@ -921,7 +928,6 @@ const handleCallEnd = async () => {
   if (el) el.style.display = 'none';
   recordId.value = '';
 };
-
 onMounted(async () => {
   await init();
   try {
@@ -934,7 +940,6 @@ onMounted(async () => {
     console.error('初始化事件监听失败:', error);
   }
 });
-
 onUnmounted(() => {
   try {
     const engine = TUICallKitAPI.getTUICallEngineInstance();
@@ -946,7 +951,6 @@ onUnmounted(() => {
     console.error('移除事件监听失败:', error);
   }
 });
-
 // -----------------------------------------------
 // ===== 用户病例弹窗 =====
 // -----------------------------------------------
@@ -954,9 +958,7 @@ const userCaseModalVisible = ref(false);
 const userCaseLoading = ref(false);
 const userCaseList = ref([]);
 const activeCaseKey = ref([]);
-
 const fallbackImage = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgesAdwF3VP4LAAA=';
-
 const decryption = async (url) => {
   try {
     const res = await axios.get(
@@ -968,7 +970,6 @@ const decryption = async (url) => {
     return '';
   }
 };
-
 const parsePhotos = (photoStr) => {
   if (!photoStr) return [];
   try {
@@ -978,7 +979,6 @@ const parsePhotos = (photoStr) => {
     return [];
   }
 };
-
 const revokeImageUrls = () => {
   userCaseList.value.forEach((item) => {
     [
@@ -988,9 +988,7 @@ const revokeImageUrls = () => {
     ].forEach((url) => URL.revokeObjectURL(url));
   });
 };
-
 watch(() => userCaseModalVisible.value, (val) => { if (!val) revokeImageUrls(); });
-
 const showUserCaseModal = async (record) => {
   userCaseModalVisible.value = true;
   userCaseLoading.value = true;
@@ -1020,7 +1018,6 @@ const showUserCaseModal = async (record) => {
     userCaseLoading.value = false;
   }
 };
-
 // -----------------------------------------------
 // ===== 药品分类列表 =====
 // -----------------------------------------------
@@ -1033,32 +1030,18 @@ const getMedicineTypeList = async () => {
     console.error('获取药品分类失败:', error);
   }
 };
-
 // -----------------------------------------------
 // ===== 截图 + 上传到专用接口 =====
 // -----------------------------------------------
-
 /** 处方图片上传接口 */
 const PRESCRIP_FILE_URL = 'https://hqgy.gzxinxingyiyuan.com/filedec/file/prescripfile';
 /** 建议单图片上传接口 */
 const ADVICE_FILE_URL = 'https://hqgy.gzxinxingyiyuan.com/filedec/file/advicefile';
-
-/**
- * 将图片 URL 转换为 base64 DataURL（通过后端代理绕过 CORS）
- * @param {string} url - 图片 URL
- * @returns {Promise<string>} base64 DataURL
- */
 const convertImageToBase64 = async (url) => {
   if (!url || !url.startsWith('http')) return url;
   // 如果已经是 base64，直接返回
   if (url.startsWith('data:')) return url;
-
   try {
-    // 方案1：使用后端代理接口获取图片
-    // 如果后端提供了代理接口，使用这个方式（推荐）
-    // const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(url)}`;
-
-    // 方案2：直接使用fetch尝试获取（需服务器支持CORS）
     const response = await fetch(url, { mode: 'cors' });
     const blob = await response.blob();
     return new Promise((resolve, reject) => {
@@ -1069,7 +1052,6 @@ const convertImageToBase64 = async (url) => {
     });
   } catch (error) {
     console.warn('图片转base64失败，尝试使用canvas方式:', url, error);
-    // 方案3：使用 Image + Canvas 方式（需要图片服务器支持 CORS）
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.crossOrigin = 'anonymous';
@@ -1094,7 +1076,6 @@ const convertImageToBase64 = async (url) => {
     });
   }
 };
-
 /**
  * 预加载并转换元素内所有跨域图片为base64
  * @param {HTMLElement} el - DOM元素
@@ -1114,7 +1095,6 @@ const preloadAndConvertImages = async (el) => {
   });
   await Promise.all(promises);
 };
-
 /**
  * 克隆 DOM + 展开截图，返回 base64 dataURL
  * @param {HTMLElement} el - 要截图的元素
@@ -1132,12 +1112,10 @@ const captureElement = async (el) => {
   clone.style.height = 'auto';
   document.body.appendChild(clone);
   await nextTick();
-
   // 关键：在截图前将所有跨域图片转换为base64
   await preloadAndConvertImages(clone);
   // 等待图片渲染完成
   await new Promise(resolve => setTimeout(resolve, 100));
-
   try {
     const canvas = await html2canvas(clone, {
       useCORS: true,
@@ -1152,7 +1130,6 @@ const captureElement = async (el) => {
     document.body.removeChild(clone);
   }
 };
-
 /**
  * 将 base64 dataURL 转为 File 对象
  */
@@ -1165,7 +1142,6 @@ const dataURLtoFile = (dataurl, filename = 'document.jpg') => {
   while (n--) u8arr[n] = bstr.charCodeAt(n);
   return new File([u8arr], filename, { type: mime });
 };
-
 /**
  * 上传图片到专用接口
  * @param {File} file
@@ -1185,7 +1161,6 @@ const uploadImageToServer = async (file, serialNumber = '', uploadType = 'prescr
   }
   throw new Error(data.msg || '图片上传失败');
 };
-
 // -----------------------------------------------
 // ===== 会诊弹窗（insertConsultation） =====
 // -----------------------------------------------
@@ -1196,34 +1171,26 @@ const diagnosisReport = ref('');
 const selectedPharmacy = ref(null);
 const chufang = ref('');
 const detailsss = ref({});
-
 /** 截图区 ref（第一步预览弹窗中的 DOM） */
 const suggestionPreviewCloneRef = ref(null);
 /** 建议单上传中标志 */
 const suggestionUploading = ref(false);
 /** 建议单上传成功后的图片 URL */
 const suggestionImageUrl = ref('');
-
 /** 建议单药品表格列头 */
 const suggestionTableHeaders = ['項目(Item)', '藥物名稱(Drug name)', '劑量(Strength)', '劑型(Dosage form)', '用法/途徑(Directions/route)', '頻次(Frequency)', '療程(Duration)', '數量(Quantity)', '特殊用法(Route)'];
-
 const consultationMed = useMedicineSelector();
-
 watch(() => consultationModalVisible.value, (val) => { if (!val) consultationMed.reset(); });
-
 const showConsultationModal = async (record) => {
   const prefix = window.location.hostname.split('.')[0];
   if (prefix === 'testgy' && sessionStorage.getItem('roleType') !== 'admin') return;
-
   selectedConsultation.value = record;
   consultationModalVisible.value = true;
   getMedicineTypeList();
-
   const orderRes = await getuserorderList({ orderId: record.orderid });
   if (orderRes.code == 200 || orderRes.code === '200') {
     detailsss.value = orderRes.data.data[0] || {};
   }
-
   if (record.consultationid) {
     consultationDetailLoading.value = true;
     try {
@@ -1247,11 +1214,9 @@ const showConsultationModal = async (record) => {
     await consultationMed.fetchList();
   }
 };
-
 // 二步确认弹窗状态（会诊，独立于 modal 外）
 const confirmSignVisible = ref(false);
 const confirmNameVisible = ref(false);
-
 /** 点击提交会诊：校验后弹第一步确认（建议单预览） */
 const saveConsultation = () => {
   if (!diagnosisReport.value) {
@@ -1286,7 +1251,6 @@ const saveConsultation = () => {
   // 弹第一步预览确认（建议单样式）
   confirmSignVisible.value = true;
 };
-
 /**
  * 第一步确认：截图 → 上传到建议单接口（advicefile） → 成功后弹第二步
  */
@@ -1309,14 +1273,13 @@ const handleSuggestionStep1Ok = async () => {
     suggestionUploading.value = false;
   }
 };
-
 /** 第二步确认完成，提交会诊 */
 const handleConfirmName = async () => {
   confirmNameVisible.value = false;
   await _doSaveConsultation();
 };
-
 const _doSaveConsultation = async () => {
+
   try {
     const params = {
       orderId: selectedConsultation.value.orderid,
@@ -1342,7 +1305,6 @@ const _doSaveConsultation = async () => {
     consultationModalVisible.value = false;
   }
 };
-
 // -----------------------------------------------
 // ===== 会诊报告详情弹窗 =====
 // -----------------------------------------------
@@ -1361,13 +1323,11 @@ const showConsultationReport = async (record) => {
     console.error('获取报告详情失败:', error);
   }
 };
-
 // -----------------------------------------------
 // ===== 查看处方单弹窗 =====
 // -----------------------------------------------
 const prescriptionModalVisible = ref(false);
 const dispensingDetail = ref({});
-
 const showPrescriptionModal = async (record) => {
   dispensingDetail.value = {};
   prescriptionModalVisible.value = true;
@@ -1380,7 +1340,6 @@ const showPrescriptionModal = async (record) => {
     console.error('获取处方单详情失败:', error);
   }
 };
-
 // -----------------------------------------------
 // ===== 选择填写方式弹窗 =====
 // -----------------------------------------------
@@ -1391,7 +1350,6 @@ const openUploadTypeModal = (record) => {
   pendingWriteRecord.value = record;
   uploadTypeVisible.value = true;
 };
-
 const selectUploadType = (type) => {
   uploadTypeVisible.value = false;
   if (type === 'text') {
@@ -1400,7 +1358,6 @@ const selectUploadType = (type) => {
     openImgPrescriptionModal(pendingWriteRecord.value);
   }
 };
-
 // -----------------------------------------------
 // ===== 图片上传处方弹窗 =====
 // -----------------------------------------------
@@ -1409,12 +1366,10 @@ const imgPrescriptionRecord = ref(null);
 const wpImgSelectedPharmacy = ref(null);
 const wpImgConfirmSignVisible = ref(false);
 const wpImgConfirmNameVisible = ref(false);
-
 const wpImgUpload = useImageUpload(
   () => imgPrescriptionRecord.value?.userserialnumber || imgPrescriptionRecord.value?.serialNumber || '',
   'prescription'
 );
-
 /** 图片上传处方 - 第一步预览截图弹窗 */
 const wpImgPrescriptionPreviewRef = ref(null);
 /** 图片上传处方 - 处方单预览数据（从 detail 接口获取） */
@@ -1423,7 +1378,6 @@ const wpImgPrescriptionDetail = ref({});
 const wpImgPrescriptionUploading = ref(false);
 /** 图片上传处方 - 截图上传成功后的 presUrl */
 const wpImgPrescriptionImageUrl = ref('');
-
 const openImgPrescriptionModal = async (record) => {
   imgPrescriptionRecord.value = record;
   wpImgSelectedPharmacy.value = null;
@@ -1442,7 +1396,6 @@ const openImgPrescriptionModal = async (record) => {
     console.error('获取处方单详情失败:', error);
   }
 };
-
 const submitImgPrescription = () => {
   if (wpImgUpload.fileList.value.length === 0) {
     message.warning('请先选择处方图片');
@@ -1465,7 +1418,6 @@ const submitImgPrescription = () => {
   wpImgPrescriptionImageUrl.value = '';
   wpImgConfirmSignVisible.value = true;
 };
-
 /**
  * 图片上传处方 - 第一步确认：截图 → 上传到处方接口（prescripfile） → 成功后弹第二步
  */
@@ -1485,15 +1437,12 @@ const handleWpImgPrescriptionStep1Ok = async () => {
     wpImgPrescriptionUploading.value = false;
   }
 };
-
 /** 图片上传处方 - 第二步确认完成，提交 */
 const handleWpImgConfirmName = async () => {
-
   wpImgConfirmNameVisible.value = false;
   const asdf = await selectprescriptiondetail({ consultationId: imgPrescriptionRecord.value.consultationid });
   const medicines = asdf?.data?.data?.medicines || [];
   const state = medicines.length === 0 ? '8' : '7';
-
   try {
     const res = await presConsultation({
       state,
@@ -1514,7 +1463,6 @@ const handleWpImgConfirmName = async () => {
     message.error('处方提交失败，请重试');
   }
 };
-
 // -----------------------------------------------
 // ===== 填写处方弹窗（文字） =====
 // -----------------------------------------------
@@ -1534,7 +1482,6 @@ const prescriptionUploading = ref(false);
 /** 处方单上传成功后的图片 URL */
 const prescriptionImageUrl = ref('');
 let _wpSubmitDetail = null;
-
 const openWritePrescriptionModal = async (record) => {
   writePrescriptionRecord.value = record;
   writePrescriptionDetail.value = {};
@@ -1551,7 +1498,6 @@ const openWritePrescriptionModal = async (record) => {
     console.error('获取填写处方详情失败:', error);
   }
 };
-
 const submitWritePrescription = (detail) => {
   _wpSubmitDetail = detail;
   if (!wpRx.value?.trim()) {
@@ -1570,7 +1516,6 @@ const submitWritePrescription = (detail) => {
   // 弹第一步：处方单预览（2.png样式）
   wpConfirmSignVisible.value = true;
 };
-
 /**
  * 处方单第一步确认：截图 → 上传到处方接口（prescripfile） → 成功后弹第二步
  */
@@ -1591,7 +1536,6 @@ const handlePrescriptionStep1Ok = async () => {
     prescriptionUploading.value = false;
   }
 };
-
 /** 处方单第二步确认完成，提交 */
 const handleWpConfirmName = async () => {
   wpConfirmNameVisible.value = false;
@@ -1618,7 +1562,6 @@ const handleWpConfirmName = async () => {
     message.error('处方提交失败，请重试');
   }
 };
-
 // -----------------------------------------------
 // ===== 编辑弹窗（updateConsultation） =====
 // -----------------------------------------------
@@ -1627,7 +1570,6 @@ const editFormIsImage = ref(false);
 const editConfirmSignVisible = ref(false);
 const editConfirmNameVisible = ref(false);
 const editCurrentRecord = ref(null);
-
 const editForm = reactive({
   id: null,
   diagnosticReport: '',
@@ -1638,15 +1580,12 @@ const editForm = reactive({
   userId: '',
   pharmacistId: '',
 });
-
 const editUpload = useImageUpload(() =>
   editCurrentRecord.value?.userserialnumber ||
   editCurrentRecord.value?.serialNumber || ''
 );
-
 const addEditMedicine = () => editForm.medicines.push({ name: '', spec: '', medicineCun: 1 });
 const removeEditMedicine = (index) => editForm.medicines.splice(index, 1);
-
 const saveEdit = async () => {
   if (!editForm.id) { message.error(t('message.error.id')); return; }
   if (!editForm.diagnosticReport) { message.error('诊断报告不能为空'); return; }
@@ -1665,12 +1604,10 @@ const saveEdit = async () => {
   }
   editConfirmSignVisible.value = true;
 };
-
 const handleEditConfirmName = async () => {
   await editData();
   editModalVisible.value = false;
 };
-
 const getDetail = async (record) => {
   try {
     const res = await selectPharmacyAuditDetail({ consultationId: record.consultationid });
@@ -1702,7 +1639,6 @@ const getDetail = async (record) => {
     console.error('获取编辑详情失败:', error);
   }
 };
-
 const openEditModal = (record) => {
   editCurrentRecord.value = record;
   editUpload.reset();
@@ -1710,14 +1646,12 @@ const openEditModal = (record) => {
   getDetail(record);
   editModalVisible.value = true;
 };
-
 watch(() => editModalVisible.value, (val) => {
   if (!val) {
     editForm.medicines = [];
     editUpload.reset();
   }
 });
-
 const editData = async () => {
   try {
     const res = await updateConsultation({
@@ -1738,7 +1672,6 @@ const editData = async () => {
     console.error('修改失败:', error);
   }
 };
-
 // -----------------------------------------------
 // ===== 修改建议单弹窗（state=2/7） =====
 // -----------------------------------------------
@@ -1756,11 +1689,8 @@ const editSuggestionPreviewRef = ref(null);
 const editSuggestionUploading = ref(false);
 /** 修改建议单上传成功后的图片 URL */
 const editSuggestionImageUrl = ref('');
-
 const editSuggestionMed = useMedicineSelector();
-
 watch(() => editSuggestionModalVisible.value, (val) => { if (!val) editSuggestionMed.reset(); });
-
 const openEditSuggestionModal = async (record) => {
   if (!['2', '7'].includes(String(record.state))) {
     message.warning('当前状态不允许修改建議單');
@@ -1772,7 +1702,6 @@ const openEditSuggestionModal = async (record) => {
   editSuggestionModalVisible.value = true;
   editSuggestionLoading.value = true;
   getMedicineTypeList();
-
   try {
     const orderRes = await selectprescriptiondetail({ consultationId: record.consultationid });
     if (orderRes.code == 200 || orderRes.code === '200') {
@@ -1799,7 +1728,6 @@ const openEditSuggestionModal = async (record) => {
     editSuggestionLoading.value = false;
   }
 };
-
 const saveEditSuggestion = () => {
   if (!editSuggestionDiagnosisReport.value?.trim()) {
     message.warning('诊断意见不能为空');
@@ -1834,7 +1762,6 @@ const saveEditSuggestion = () => {
   editSuggestionImageUrl.value = '';
   editSuggestionConfirmSignVisible.value = true;
 };
-
 /**
  * 修改建议单 - 第一步确认：截图 → 上传到建议单接口（advicefile） → 成功后弹第二步
  */
@@ -1854,7 +1781,6 @@ const handleEditSuggestionStep1Ok = async () => {
     editSuggestionUploading.value = false;
   }
 };
-
 /** 修改建议单 - 第二步确认完成，提交 */
 const handleEditSuggestionConfirmName = async () => {
   editSuggestionConfirmNameVisible.value = false;
@@ -1878,7 +1804,6 @@ const handleEditSuggestionConfirmName = async () => {
       consultationMedicine: editSuggestionDetail.value.consultationMedicine,
       presType: editSuggestionDetail.value.presType,
     };
-
     const res = await updateConsultation(params);
     if (res.code == 200) {
       message.success('修改成功');
@@ -1892,7 +1817,6 @@ const handleEditSuggestionConfirmName = async () => {
     message.error('修改失败，请重试');
   }
 };
-
 // -----------------------------------------------
 // ===== 修改处方单弹窗（state=6） =====
 // -----------------------------------------------
@@ -1909,12 +1833,10 @@ const editPrescriptionPreviewRef = ref(null);
 const editPrescriptionUploading = ref(false);
 /** 修改处方单上传成功后的图片 URL */
 const editPrescriptionImageUrl = ref('');
-
 const epUpload = useImageUpload(
   () => editPrescriptionRecord.value?.userserialnumber || editPrescriptionRecord.value?.serialNumber || '',
   'prescription'
 );
-
 const openEditPrescriptionModal = async (record) => {
   if (!['6', '7'].includes(String(record.state))) {
     message.warning('当前状态不允许修改处方单');
@@ -1926,7 +1848,6 @@ const openEditPrescriptionModal = async (record) => {
   editPrescriptionTextValue.value = '';
   epUpload.reset();
   editPrescriptionModalVisible.value = true;
-
   try {
     const res = await selectPharmacyAuditDetail({ consultationId: record.consultationid });
     if (res.code == 200 || res.code === '200') {
@@ -1944,7 +1865,6 @@ const openEditPrescriptionModal = async (record) => {
     console.error('获取处方单详情失败:', error);
   }
 };
-
 const saveEditPrescription = () => {
   if (editPrescriptionIsImage.value) {
     if (epUpload.fileList.value.length === 0) { message.warning('请上传处方图片'); return; }
@@ -1963,7 +1883,6 @@ const saveEditPrescription = () => {
   editPrescriptionImageUrl.value = '';
   editPrescriptionConfirmSignVisible.value = true;
 };
-
 /**
  * 修改处方单 - 第一步确认：截图 → 上传到处方接口（prescripfile） → 成功后弹第二步
  */
@@ -1984,7 +1903,6 @@ const handleEditPrescriptionStep1Ok = async () => {
     editPrescriptionUploading.value = false;
   }
 };
-
 /** 修改处方单 - 第二步确认完成，提交 */
 const handleEditPrescriptionConfirmName = async () => {
   editPrescriptionConfirmNameVisible.value = false;
@@ -2019,7 +1937,6 @@ const handleEditPrescriptionConfirmName = async () => {
   }
 };
 </script>
-
 <style scoped lang="scss">
 .search-form {
   display: flex;

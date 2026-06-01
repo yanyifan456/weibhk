@@ -61,8 +61,80 @@ export const addUser = (params) => request.post("/medicine/loginuseradd", params
 /**
  * 获取医院列表
  * @param {*} params
+ * @param {String} params.legalPerson 法人名称
+ * @param {String} params.hospitalName 医院名称
  */
 export const getHospital = (params) => request.post("/param/gethospitals", params);
+
+/**
+ * 新增医院
+ * @param {*} params
+ * @param {String} params.hospitalName 医院名称
+ * @param {String} params.caseCode 营业执照编码
+ * @param {String} params.legalPerson 法人名称
+ * @param {String} params.legalPersonId 法人证件id
+ * @param {String} params.typeId 法人证件类型
+ * @param {String} params.hospitalId 医院编码
+ * @param {String} params.hospitalAddress 医院详细地址
+ * @param {String} params.hospitalTel 诊所/医院联系电话
+ * @param {String} params.netAddress 医院的官网地址
+ * @param {Number} params.startupCapital 开办资金金额数
+ * @param {String} params.institutionCode 卫生机构标准代码
+ * @param {String} params.licenseNumber 卫生机构许可证号
+ * @param {String} params.licenseDate 许可证名称
+ * @param {String} params.licenseValiteDate 许可证有效期
+ * @param {String} params.hospitalLevel 医院等级
+ * @param {String} params.hospitalGrade 医疗机构级别
+ */
+export const addHospital = (params) => request.post("/param/inserthospital", params);
+
+/**
+ * 更新医院
+ * @param {*} params
+ * @param {String} params.id 医院ID
+ * @param {String} params.hospitalName 医院名称
+ * @param {String} params.caseCode 营业执照编码
+ * @param {String} params.legalPerson 法人名称
+ * @param {String} params.legalPersonId 法人证件id
+ * @param {String} params.typeId 法人证件类型
+ * @param {String} params.hospitalId 医院编码
+ * @param {String} params.hospitalAddress 医院详细地址
+ * @param {String} params.hospitalTel 诊所/医院联系电话
+ * @param {String} params.netAddress 医院的官网地址
+ * @param {Number} params.startupCapital 开办资金金额数
+ * @param {String} params.institutionCode 卫生机构标准代码
+ * @param {String} params.licenseNumber 卫生机构许可证号
+ * @param {String} params.licenseDate 许可证名称
+ * @param {String} params.licenseValiteDate 许可证有效期
+ * @param {String} params.hospitalLevel 医院等级
+ * @param {String} params.hospitalGrade 医疗机构级别
+ */
+export const updateHospital = (params) => request.post("/param/updatehospital", params);
+
+/**
+ * 删除医院
+ * @param {*} params
+ * @param {String} params.id 医院ID
+ */
+export const deleteHospital = (params) => request.post("/param/deletehospital", params);
+
+/**
+ * 获取证件类型列表
+ * @param {*} params
+ */
+export const getCertTypeList = (params) => request.post("/acceptmidorderuser/getCertTypeList", params);
+
+/**
+ * 获取医院等级列表
+ * @param {*} params
+ */
+export const getHospitalLevelList = (params) => request.post("/acceptmidorderuser/getHospitalLevelList", params);
+
+/**
+ * 获取医疗机构级别列表
+ * @param {*} params
+ */
+export const getHospitalTypeList = (params) => request.post("/acceptmidorderuser/getHospitalTypeList", params);
 
 /**
  * 下拉菜单获取仓库资料中的单位

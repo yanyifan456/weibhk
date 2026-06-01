@@ -68,7 +68,8 @@
             <!-- 右上角：机构 logo/名称 + 单据编号 + 日期 -->
             <div style="text-align: right; font-size: 13px;  min-width: 200px;">
                 <!-- 机构名称（hospitalName） -->
-                <div>
+                <div v-if="detail.hospitalPhoto">
+
                     <img style="width: 190px;height: 40px;" :src="replaceToCurrentDomain(detail.hospitalPhoto)"
                         alt="" />
 
@@ -133,15 +134,15 @@
                         <td style="border: 1px solid ; padding: 6px;">{{ item.name || '' }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.spec || '' }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.dosageForm || ''
-                            }}</td>
+                        }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.directionsRoute ||
                             '' }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.frenquency || ''
-                            }}</td>
+                        }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.duration || '' }}
                         </td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.medicineCun || ''
-                            }}</td>
+                        }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.specialPurpose ||
                             '' }}</td>
                     </tr>
@@ -156,7 +157,7 @@
         <div style="text-align: right; margin-bottom: 4px; font-size: 13px;">
             <span>醫生簽名蓋章：</span>
             <span v-if="!detail.doctorSign">XXXXX</span>
-            <img v-else :src="detail.doctorSign" style="height: 28px; width: auto; vertical-align: middle;"
+            <img v-else :src="detail.doctorSign" style="height: 80px; width: auto; vertical-align: middle;"
                 alt="医生签名" />
         </div>
 

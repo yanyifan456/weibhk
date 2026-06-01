@@ -68,7 +68,10 @@
             <!-- 右上角：机构 logo/名称 + 单据编号 + 日期 -->
             <div style="text-align: right; font-size: 13px;  min-width: 200px;">
                 <!-- 机构名称（hospitalName） -->
-                <img style="width: 190px;height: 40px;" :src="detail.hospitalPhoto" alt="" />
+                <div v-if="detail.hospitalPhoto">
+                    <img style="width: 190px;height: 40px;" :src="detail.hospitalPhoto" alt="" />
+
+                </div>
                 <div style="font-size: 12px;  margin-bottom: 10px;">{{ detail.hospitalEnName || '' }}</div>
                 <div style="margin-top: 8px;margin-top: 100px;">單據編號：{{ detail.formId || '' }}</div>
                 <div style="margin-top: 4px;">日期：&nbsp;{{ detail.createTime ? detail.createTime.slice(0, 10) :
@@ -152,7 +155,7 @@
         <div style="text-align: right; margin-bottom: 4px; font-size: 13px;">
             <span>醫生簽名：</span>
             <span v-if="!detail.doctorSign">XXXXX</span>
-            <img v-else :src="detail.doctorSign" style="height: 28px; width: auto; vertical-align: middle;"
+            <img v-else :src="detail.doctorSign" style="height: 80px; width: auto; vertical-align: middle;"
                 alt="医生签名" />
         </div>
         <div style="text-align: right; margin-bottom: 4px; font-size: 13px;">
@@ -161,7 +164,7 @@
             <img v-if="detail.pharmaSign" :src="detail.pharmaSign?.startsWith('data:image')
                 ? detail.pharmaSign
                 : 'data:image/png;base64,' + detail.pharmaSign"
-                style="height: 68px; width: auto; vertical-align: middle;" alt="药剂师签名" />
+                style="height: 80px; width: auto; vertical-align: middle;" alt="药剂师签名" />
         </div>
 
         <!-- ===== 插槽：操作区 ===== -->

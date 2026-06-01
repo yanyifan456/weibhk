@@ -47,6 +47,9 @@
                             <a-image v-if="record.photo" :src="record.photo" :width="50" :height="50" />
                             <span v-else>-</span>
                         </template>
+                        <template v-if="column.key === 'type'">
+                            <span>{{ getMedicineTypeName(record.type) }}</span>
+                        </template>
                         <template v-if="column.key === 'action'">
                             <div class="action-buttons">
                                 <a-button type="link" size="small" @click="editRecord(record)">
@@ -731,7 +734,7 @@ const submitForm = async () => {
         // 编辑时添加id
         if (isEdit.value) {
             medicineData.id = formData.id;
-            
+
             // 【修改点】：如果是编辑模式，且没有上传新文件，但存在原图片URL，则将其加入 medicineData
             if (!uploadedFile.value && photoFileList.value.length > 0 && photoFileList.value[0].url) {
                 medicineData.photo = photoFileList.value[0].url;
@@ -824,6 +827,12 @@ const daochus = async (record) => {
     a.click();
 
     window.URL.revokeObjectURL(url);
+};
+
+const getMedicineTypeName = (typeId) => {
+    if (!typeId) return '-';
+    const type = medicineTypeList.value.find(item => item.typeId === String(typeId));
+    return type ? type.typeName : typeId;
 };
 
 </script>

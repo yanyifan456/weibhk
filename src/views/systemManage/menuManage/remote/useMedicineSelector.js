@@ -279,6 +279,7 @@ export function useMedicineSelector() {
         duration: extra.duration || "",
         directionsRoute: extra.directionsRoute || "",
         specialPurpose: extra.specialPurpose || "",
+        ID: item ? item.id : "",
       };
     });
 

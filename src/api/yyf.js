@@ -189,7 +189,7 @@ export const updatefeedback = (params) =>
 export const selectmidfeedbacklist = (params) =>
   request.post("/appfeedback/selectmidfeedbacklist", params);
 export const selectUserCaseList = (params) =>
-  request.post("/mini/userCase/selectUserCaseList", params);
+  request.post("/acceptmidorderuser/selectMidUserCaseList", params);
 export const choice = (params) =>
   request.post("/acceptmidorderuser/selectMid/doctor/schedule/choice", params);
 
@@ -278,3 +278,5 @@ export const getfirstpreDetail = (params) =>
   request.post("/acceptpharmacy/getfirstpreDetail", params);
 export const videolist = (params) =>
   request.post("/video/record/select/consultation/video/list", params);
+export const selectUserDetail = (params) =>
+  request.post("/mini/user/selectUserDetail", params);

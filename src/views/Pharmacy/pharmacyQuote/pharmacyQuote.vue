@@ -323,8 +323,8 @@
                 <div style="text-align: right; margin-bottom: 4px; font-size: 13px;margin-top: 200px;">
                     <span>醫生簽名：</span>
                     <span v-if="!checkDetail.doctorSign">XXXXX</span>
-                    <img v-else :src="checkDetail.doctorSign" style="height: 28px; width: auto; vertical-align: middle;"
-                        alt="医生签名" />
+                    <img v-else :src="checkDetail.doctorSign"
+                        style="height: 120px; width: auto; vertical-align: middle;" alt="医生签名" />
                 </div>
 
                 <!-- ===== 插槽：操作区 ===== -->
@@ -739,6 +739,7 @@ const confirmMedicinePrice = async () => {
                 duration: item.duration || '',
                 directionsRoute: item.directionsRoute || '',
                 specialPurpose: item.specialPurpose || '',
+                medicineId: item.medicineId || '',
             };
         });
 
