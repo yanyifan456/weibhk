@@ -701,7 +701,7 @@
   <!-- 实时字幕面板 -->
   <SubtitlePanel
     :active="callActive"
-    :ws-host="subtitleWsHost"
+    :ws-host="subtitleWsHostRef"
     :room-id="subtitleRoomId"
     :user-id="subtitleUserId"
     ref="subtitlePanelRef"
@@ -895,8 +895,26 @@ const callActive = ref(false);
 const videoCallTimerRef = ref(null);
 /** 字幕面板 ref */
 const subtitlePanelRef = ref(null);
-/** 字幕 WebSocket 服务地址（从录制接口返回的 audioWsUrl 中解析出 host） */
-const subtitleWsHost = ref('');
+/**
+ * 字幕 WebSocket 服务 host。
+ * 字幕服务与业务 API 在同一台机器，端口固定 8089。
+ * 从 VITE_API_URL（如 http://192.168.100.14:18085）中提取 host，替换端口为 8089，
+ * 协议改为 ws:// / wss://，得到 ws://192.168.100.14:8089。
+ */
+const subtitleWsHost = (() => {
+  try {
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+    // 支持 http/https，转换为 ws/wss
+    const wsProto = apiUrl.startsWith('https') ? 'wss' : 'ws';
+    // 提取 host（去掉协议、去掉路径）
+    const host = apiUrl.replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/:\d+$/, '');
+    return `${wsProto}://${host}:8089`;
+  } catch {
+    return '';
+  }
+})();
+/** 字幕 WS host（响应式，供模板 prop 绑定） */
+const subtitleWsHostRef = ref(subtitleWsHost);
 /** 字幕订阅房间 ID */
 const subtitleRoomId = ref('');
 /** 字幕订阅用户 ID（医生端 userId） */
@@ -952,19 +970,9 @@ const handleCallBegin = async (params) => {
     });
     if (res?.data?.recordId) recordId.value = res.data.recordId;
 
-    // 解析字幕 WebSocket host（audioWsUrl 示例：ws://192.168.100.14:8089/ws/audio/）
-    if (res?.data?.audioWsUrl) {
-      const match = res.data.audioWsUrl.match(/^(wss?:\/\/[^/]+)/);
-      subtitleWsHost.value = match ? match[1] : '';
-    }
-    subtitleRoomId.value = roomId.value;
+    // roomId 传字符串（字幕 WS 路径参数使用字符串格式）
+    subtitleRoomId.value = String(roomId.value);
     subtitleUserId.value = sessionStorage.getItem('username') || callerUserID.value;
-
-    console.log('[v0] 字幕连接参数:', {
-      wsHost: subtitleWsHost.value,
-      roomId: subtitleRoomId.value,
-      userId: subtitleUserId.value,
-    });
   } catch (error) {
     console.error('调用startRecording失败:', error);
   }
@@ -1495,7 +1503,7 @@ const submitImgPrescription = () => {
     ...wpImgPrescriptionDetail.value,
     consultationMedicine: wpImgUpload.uploadedUrl.value,
   };
-  // 弹第一步：预览处方单 + 截图上传
+  // 弹第一步：预览处方单 + 截��上传
   wpImgPrescriptionImageUrl.value = '';
   wpImgConfirmSignVisible.value = true;
 };

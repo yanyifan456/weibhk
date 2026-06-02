@@ -68,9 +68,9 @@ const props = defineProps({
     type: String,
     default: '',
   },
-  /** 房间 ID */
+  /** 房间 ID（字符串或数字均可，内部统一转字符串拼 URL） */
   roomId: {
-    type: String,
+    type: [String, Number],
     default: '',
   },
   /** 当前用户 ID（医生端） */
