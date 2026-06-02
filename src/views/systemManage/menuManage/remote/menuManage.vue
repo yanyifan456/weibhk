@@ -705,6 +705,7 @@
     :room-id="subtitleRoomId"
     :user-id="subtitleUserId"
     :output-format="currentOutputFormat"
+    :doctor-task-id="doctorTaskId"
     @switch-lang="handleSwitchLang"
     ref="subtitlePanelRef"
   />
@@ -1068,67 +1069,17 @@ const handleCallEnd = async () => {
 };
 
 /**
- * 字幕语言切换（医生看患者字幕的 doctorOutputFormat）。
- * 文档说明：关闭音频 WS 后端自动停止识别，没有单独的切换接口。
- * 正确做法：停止当前双路音频采集（关闭 WS 触发后端停止旧任务），
- * 重新调 startRecording 用新 outputFormat 启动新任务，重连音频 WS 和字幕 WS。
+ * 字幕语言切换。
+ * 字幕 WS 推来的消息里同时包含 originalText（原文）和 convertedText（转换文本），
+ * 切换语言只需更新 currentOutputFormat，SubtitlePanel 内部用 displayLang 重新渲染历史字幕，
+ * 不需要断开 WS 或重调任何接口。
  * @param {'simplified'|'traditional'|'en'} outputFormat
  */
-const handleSwitchLang = async (outputFormat) => {
-  if (!callActive.value) return;
+const handleSwitchLang = (outputFormat) => {
   if (currentOutputFormat.value === outputFormat) return;
-
   currentOutputFormat.value = outputFormat;
-
-  // 1. 停止旧双路音频 WS（后端 onClose 自动停止旧识别任务）
-  await stopSpeechCapture();
-
-  // 2. 停止旧录制
-  if (recordId.value) {
-    await stopRecording(recordId.value).catch(() => {});
-    recordId.value = '';
-  }
-
-  // 3. 以新 doctorOutputFormat 重新启动录制 + 识别
-  try {
-    const res = await startRecording({
-      roomId: subtitleRoomId.value,
-      userId: selectedConsultation.value.userserialnumber,
-      doctorId: selectedConsultation.value.doctorid,
-      orderId: selectedConsultation.value.orderid,
-      doctorSpeakLanguage: 'yue-CN',
-      patientSpeakLanguage: 'zh-CN',
-      patientOutputFormat: 'simplified',
-      doctorOutputFormat: outputFormat,
-      doctorTargetUserId: `doctor_${selectedConsultation.value.doctorid}`,
-    });
-    const data = res?.data || {};
-    if (data.recordId) recordId.value = data.recordId;
-    if (data.userTaskId) userTaskId.value = data.userTaskId;
-    if (data.doctorTaskId) doctorTaskId.value = data.doctorTaskId;
-    if (data.audioWsUrl) {
-      audioWsBaseUrl.value = data.audioWsUrl;
-      const match = data.audioWsUrl.match(/^(wss?:\/\/[^/]+)/);
-      if (match) subtitleWsHostRef.value = match[1];
-    }
-
-    // 4. 重新启动双路音频 WS
-    if (data.audioWsUrl && data.doctorTaskId && data.userTaskId) {
-      const getTRTCInstance = () => {
-        const engine = TUICallKitAPI.getTUICallEngineInstance();
-        const cloud = engine?.getTRTCCloudInstance?.();
-        return cloud?._trtc ?? null;
-      };
-      startSpeechCapture(data.audioWsUrl, data.doctorTaskId, data.userTaskId, getTRTCInstance);
-    }
-
-    // 5. 清空字幕列表并重连字幕 WS（后端将按新 outputFormat 推送）
-    subtitlePanelRef.value?.clearSubtitles();
-    subtitlePanelRef.value?.disconnectSubtitleWs();
-    subtitlePanelRef.value?.connectSubtitleWs();
-  } catch (e) {
-    console.error('切换语言失败:', e);
-  }
+  // 通知字幕面板用新语言重新渲染所有历史条目
+  subtitlePanelRef.value?.refreshDisplayLang(outputFormat);
 };
 onMounted(async () => {
   await init();

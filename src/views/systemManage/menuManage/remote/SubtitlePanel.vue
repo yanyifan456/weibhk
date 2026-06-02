@@ -79,12 +79,20 @@ const props = defineProps({
     default: '',
   },
   /**
-   * 当前转换格式，由父组件控制（simplified | traditional | none）
+   * 当前转换格式，由父组件控制（simplified | traditional | en）
    * 对应语言按钮的高亮状态
    */
   outputFormat: {
     type: String,
-    default: 'traditional', // 默认场景：香港医生(粤语)看内地患者(普通话)字幕 → 繁体
+    default: 'traditional',
+  },
+  /**
+   * 医生端识别任务ID，用于区分字幕是医生说的还是患者说的。
+   * 后端消息里的 taskId 与此一致 → 医生；否则 → 患者。
+   */
+  doctorTaskId: {
+    type: String,
+    default: '',
   },
 });
 
@@ -146,17 +154,31 @@ const connectSubtitleWs = () => {
       const subtitle = JSON.parse(event.data);
       if (subtitle.type !== 'text') return;
 
-      // 后端已按 outputFormat 转换好 convertedText，直接展示；
-      // originalText 作为降级（en 格式时 convertedText 即为英文翻译结果）
-      const displayText = subtitle.convertedText || subtitle.originalText || '';
+      // 同时保存 originalText 和 convertedText，切换语言时无需重连 WS
+      const originalText = subtitle.originalText || '';
+      const convertedText = subtitle.convertedText || '';
+      // 初始 displayText 由当前 outputFormat 决定：
+      //   simplified/traditional → convertedText（后端已转换）
+      //   en → convertedText（后端翻译成英文）
+      //   fallback → originalText
+      const displayText = convertedText || originalText;
       if (!displayText) return;
 
-      // speakerRole 区分医生/患者：'doctor' | 'user'
-      const item = {
-        ...subtitle,
-        displayText,
-        speakerRole: subtitle.speakerRole || (subtitle.speakerId?.startsWith('doctor_') ? 'doctor' : 'user'),
-      };
+      // 说话人判断优先级：
+      // 1. 后端直接返回 speakerRole 字段（'doctor' | 'user'）
+      // 2. 通过 taskId 与 doctorTaskId prop 对比判断
+      // 3. 通过 speakerId 是否以 doctor_ 开头判断
+      let speakerRole = subtitle.speakerRole;
+      if (!speakerRole) {
+        if (props.doctorTaskId && subtitle.taskId && subtitle.taskId === props.doctorTaskId) {
+          speakerRole = 'doctor';
+        } else if (subtitle.speakerId && subtitle.speakerId.startsWith('doctor_')) {
+          speakerRole = 'doctor';
+        } else {
+          speakerRole = 'user';
+        }
+      }
+      const item = { ...subtitle, originalText, convertedText, displayText, speakerRole };
 
       if (subtitle.isFinal) {
         subtitleList.value.push(item);
@@ -225,7 +247,22 @@ onUnmounted(() => {
   disconnectSubtitleWs();
 });
 
-defineExpose({ clearSubtitles, connectSubtitleWs, disconnectSubtitleWs });
+/**
+ * 切换语言后重新计算所有已保存字幕条目的 displayText，无需重连 WS。
+ * simplified/traditional/en → 显示 convertedText（后端已按 doctorOutputFormat 转换好）
+ * 若 convertedText 为空则降级显示 originalText。
+ */
+const refreshDisplayLang = (outputFormat) => {
+  const remap = (item) => {
+    if (!item) return item;
+    const displayText = item.convertedText || item.originalText || '';
+    return { ...item, displayText };
+  };
+  subtitleList.value = subtitleList.value.map(remap);
+  if (currentLine.value) currentLine.value = remap(currentLine.value);
+};
+
+defineExpose({ clearSubtitles, connectSubtitleWs, disconnectSubtitleWs, refreshDisplayLang });
 </script>
 
 <style scoped>
