@@ -734,7 +734,7 @@ import {
   getfirstpreDetail,
   selectUserDetail
 } from '@/api/yyf';
-import { startRecording, stopRecording } from '@/api/video';
+import { startRecording, stopRecording, startSpeech, stopSpeech } from '@/api/video';
 import {
   insertConsultation,
   getConsultationDetail,
@@ -919,6 +919,8 @@ const subtitleWsHostRef = ref(subtitleWsHost);
 const subtitleRoomId = ref('');
 /** 字幕订阅用户 ID（医生端 userId） */
 const subtitleUserId = ref('');
+/** 语音识别任务 ID（用于停止识别） */
+const speechTaskId = ref('');
 
 const roomId = ref('');
 const callId = ref('');
@@ -969,12 +971,27 @@ const handleCallBegin = async (params) => {
       orderId: selectedConsultation.value.orderid,
     });
     if (res?.data?.recordId) recordId.value = res.data.recordId;
-
-    // roomId 传字符串（字幕 WS 路径参数使用字符串格式）
-    subtitleRoomId.value = String(roomId.value);
-    subtitleUserId.value = sessionStorage.getItem('username') || callerUserID.value;
   } catch (error) {
     console.error('调用startRecording失败:', error);
+  }
+
+  // 启动语音识别，获取 taskId 后再激活字幕面板
+  try {
+    const doctorId = selectedConsultation.value.doctorid;
+    const wsRoomId = String(roomId.value);
+    const wsUserId = `doctor_${doctorId}`;
+    const speechRes = await startSpeech({
+      roomId: wsRoomId,
+      userId: wsUserId,
+      language: 'zh-CN',
+    });
+    if (speechRes?.data?.taskId) {
+      speechTaskId.value = speechRes.data.taskId;
+    }
+    subtitleRoomId.value = wsRoomId;
+    subtitleUserId.value = wsUserId;
+  } catch (error) {
+    console.error('启动语音识别失败:', error);
   }
 
   // 所有字幕参数就绪后，再激活倒计时 & 字幕面板
@@ -999,6 +1016,16 @@ const handleTimerWarning = () => {
 const handleCallEnd = async () => {
   // 停止倒计时 & 字幕面板
   callActive.value = false;
+
+  // 停止语音识别
+  if (speechTaskId.value) {
+    try {
+      await stopSpeech(speechTaskId.value);
+    } catch (error) {
+      console.error('停止语音识别失败:', error);
+    }
+    speechTaskId.value = '';
+  }
 
   if (recordId.value) {
     try {

@@ -139,22 +139,13 @@ const scrollToBottom = async () => {
 
 // ——— WebSocket 字幕连接 ———
 const connectSubtitleWs = () => {
-  if (!props.wsHost || !props.roomId || !props.userId) {
-    console.log('[v0] SubtitlePanel: 参数不足，跳过连接', {
-      wsHost: props.wsHost,
-      roomId: props.roomId,
-      userId: props.userId,
-    });
-    return;
-  }
+  if (!props.wsHost || !props.roomId || !props.userId) return;
   const url = `${props.wsHost}/ws/subtitle/${props.roomId}/${props.userId}`;
-  console.log('[v0] SubtitlePanel: 连接字幕WS', url);
   wsStatus.value = 'connecting';
 
   subtitleWs = new WebSocket(url);
 
   subtitleWs.onopen = () => {
-    console.log('[v0] SubtitlePanel: WebSocket已连接');
     wsStatus.value = 'connected';
   };
 
@@ -183,13 +174,11 @@ const connectSubtitleWs = () => {
     }
   };
 
-  subtitleWs.onclose = (e) => {
-    console.log('[v0] SubtitlePanel: WebSocket已关闭', e.code, e.reason);
+  subtitleWs.onclose = () => {
     wsStatus.value = 'disconnected';
   };
 
-  subtitleWs.onerror = (e) => {
-    console.error('[v0] SubtitlePanel: WebSocket连接错误', e);
+  subtitleWs.onerror = () => {
     wsStatus.value = 'disconnected';
   };
 };
