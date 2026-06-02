@@ -57,7 +57,7 @@
             {{ $t('button.consultation') }}
           </a-button>
         </template>
-        <!-- :disabled="record.operationType !== 'CONSULT'" -->
+
         <template v-else-if="column.key === 'editSuggestion'">
           <a-button type="link" :disabled="!['2', '7'].includes(String(record.state))"
             @click="openEditSuggestionModal(record)">
@@ -115,60 +115,7 @@
       <ConfirmModal v-model:step1Visible="editConfirmSignVisible" v-model:step2Visible="editConfirmNameVisible"
         step1Title="确认签署" step1Text="您确认签署？" step2Title="确认签字" step2Text="您确认签字？" @confirm="handleEditConfirmName" />
     </a-modal>
-    <!-- ========== 用户病例弹窗 ========== -->
-    <a-modal v-model:open="userCaseModalVisible" :title="$t('userCase.title')" width="900px" :footer="null">
-      <a-spin :spinning="userCaseLoading">
-        <div v-if="userCaseList.length === 0 && !userCaseLoading" style="text-align: center; padding: 40px;">
-          {{ $t('userCase.noData') }}
-        </div>
-        <div v-else>
-          <a-collapse v-model:activeKey="activeCaseKey" accordion>
-            <a-collapse-panel v-for="(item, index) in userCaseList" :key="String(item.id)"
-              :header="$t('userCase.record') + (index + 1) + ' - ' + item.createTime">
-              <a-descriptions :column="1" bordered size="small">
-                <a-descriptions-item :label="'病情描述'">{{ item.condDesc || '--'
-                }}</a-descriptions-item>
-                <a-descriptions-item :label="$t('userCase.historyCase')">{{ item.historyCase || '--'
-                }}</a-descriptions-item>
-                <a-descriptions-item :label="$t('userCase.historyDiagnosis')">{{ item.historyDiagnosis || '--'
-                }}</a-descriptions-item>
-                <a-descriptions-item :label="$t('userCase.historyReport')">{{ item.historyReport || '--'
-                }}</a-descriptions-item>
-                <a-descriptions-item :label="$t('userCase.casePhoto')">
-                  <a-image-preview-group v-if="item.casePhotoDecrypt?.length > 0">
-                    <a-space>
-                      <a-image v-for="(photo, idx) in item.casePhotoDecrypt" :key="idx" :width="80" :src="photo"
-                        :fallback="fallbackImage" />
-                    </a-space>
-                  </a-image-preview-group>
-                  <span v-else>--</span>
-                </a-descriptions-item>
-                <a-descriptions-item :label="$t('userCase.diagnosisPhoto')">
-                  <a-image-preview-group v-if="item.diagnosisPhotoDecrypt?.length > 0">
-                    <a-space>
-                      <a-image v-for="(photo, idx) in item.diagnosisPhotoDecrypt" :key="idx" :width="80" :src="photo"
-                        :fallback="fallbackImage" />
-                    </a-space>
-                  </a-image-preview-group>
-                  <span v-else>--</span>
-                </a-descriptions-item>
-                <a-descriptions-item :label="$t('userCase.reportPhoto')">
-                  <a-image-preview-group v-if="item.reportPhotoDecrypt?.length > 0">
-                    <a-space>
-                      <a-image v-for="(photo, idx) in item.reportPhotoDecrypt" :key="idx" :width="80" :src="photo"
-                        :fallback="fallbackImage" />
-                    </a-space>
-                  </a-image-preview-group>
-                  <span v-else>--</span>
-                </a-descriptions-item>
-                <a-descriptions-item :label="$t('userCase.createTime')">{{ item.createTime || '--'
-                }}</a-descriptions-item>
-              </a-descriptions>
-            </a-collapse-panel>
-          </a-collapse>
-        </div>
-      </a-spin>
-    </a-modal>
+
     <!-- ========== 会诊弹窗（insertConsultation） ========== -->
     <a-modal v-model:open="consultationModalVisible" destroyOnClose title="醫療建議單" width="65%" :footer="null"
       style="transform: translateX(300px);">
@@ -195,8 +142,11 @@
             </div>
 
             <div style="text-align: center; margin: 12px 0;">
-              <a-button type="primary" size="large" @click="startConsultation">
+              <a-button type="primary" size="large" @click="startConsultation" style="margin-right: 20px;">
                 {{ $t('button.startConsultation') }}
+              </a-button>
+              <a-button type="primary" size="large" @click="showUserCaseModal(detailsss)">
+                查看病历
               </a-button>
             </div>
 
@@ -228,6 +178,7 @@
             </a-button>
           </div>
         </div>
+
       </a-spin>
       <!-- ========== 会诊弹窗 - 第一步确认（预览建议单 + 截图上传） ========== -->
       <a-modal v-model:open="confirmSignVisible" style="transform: translateX(300px);" title="確認簽署建議單" width="68%"
@@ -303,6 +254,61 @@
       <a-modal v-model:open="confirmNameVisible" title="確認簽名" :width="360" ok-text="確定" cancel-text="取消"
         @ok="handleConfirmName" @cancel="confirmNameVisible = false">
         <p style="font-size: 16px; text-align: center; padding: 12px 0;">您確認簽名？</p>
+      </a-modal>
+      <!-- ========== 用户病例弹窗 ========== -->
+      <a-modal v-model:open="userCaseModalVisible" :title="$t('userCase.title')"
+        style="transform: translateX(300px); width: 900px;" z-index="1000" :footer="null">
+        <a-spin :spinning="userCaseLoading">
+          <div v-if="userCaseList.length === 0 && !userCaseLoading" style="text-align: center; padding: 40px;">
+            {{ $t('userCase.noData') }}
+          </div>
+          <div v-else>
+            <a-collapse v-model:activeKey="activeCaseKey" accordion>
+              <a-collapse-panel v-for="(item, index) in userCaseList" :key="String(item.id)"
+                :header="$t('userCase.record') + (index + 1) + ' - ' + item.createTime">
+                <a-descriptions :column="1" bordered size="small">
+                  <a-descriptions-item :label="'病情描述'">{{ item.condDesc || '--'
+                  }}</a-descriptions-item>
+                  <a-descriptions-item :label="$t('userCase.historyCase')">{{ item.historyCase || '--'
+                  }}</a-descriptions-item>
+                  <a-descriptions-item :label="$t('userCase.historyDiagnosis')">{{ item.historyDiagnosis || '--'
+                  }}</a-descriptions-item>
+                  <a-descriptions-item :label="$t('userCase.historyReport')">{{ item.historyReport || '--'
+                  }}</a-descriptions-item>
+                  <a-descriptions-item :label="$t('userCase.casePhoto')">
+                    <a-image-preview-group v-if="item.casePhotoDecrypt?.length > 0">
+                      <a-space>
+                        <a-image v-for="(photo, idx) in item.casePhotoDecrypt" :key="idx" :width="80" :src="photo"
+                          :fallback="fallbackImage" />
+                      </a-space>
+                    </a-image-preview-group>
+                    <span v-else>--</span>
+                  </a-descriptions-item>
+                  <a-descriptions-item :label="$t('userCase.diagnosisPhoto')">
+                    <a-image-preview-group v-if="item.diagnosisPhotoDecrypt?.length > 0">
+                      <a-space>
+                        <a-image v-for="(photo, idx) in item.diagnosisPhotoDecrypt" :key="idx" :width="80" :src="photo"
+                          :fallback="fallbackImage" />
+                      </a-space>
+                    </a-image-preview-group>
+                    <span v-else>--</span>
+                  </a-descriptions-item>
+                  <a-descriptions-item :label="$t('userCase.reportPhoto')">
+                    <a-image-preview-group v-if="item.reportPhotoDecrypt?.length > 0">
+                      <a-space>
+                        <a-image v-for="(photo, idx) in item.reportPhotoDecrypt" :key="idx" :width="80" :src="photo"
+                          :fallback="fallbackImage" />
+                      </a-space>
+                    </a-image-preview-group>
+                    <span v-else>--</span>
+                  </a-descriptions-item>
+                  <a-descriptions-item :label="$t('userCase.createTime')">{{ item.createTime || '--'
+                  }}</a-descriptions-item>
+                </a-descriptions>
+              </a-collapse-panel>
+            </a-collapse>
+          </div>
+        </a-spin>
       </a-modal>
     </a-modal>
     <!-- ========== 会诊报告详情弹窗 ========== -->
@@ -778,7 +784,7 @@ const handleReset = () => {
 const columns = computed(() => [
   { title: t('label.appointmentNumber'), dataIndex: 'orderid', key: 'orderid', align: 'center' },
   { title: t('label.appointmentPerson'), dataIndex: 'username', key: 'username', align: 'center' },
-  { title: '用户病歷', dataIndex: 'orderuserid', key: 'orderuserid', align: 'center' },
+  // { title: '用户病歷', dataIndex: 'orderuserid', key: 'orderuserid', align: 'center' },
 
   { title: t('label.consultingDoctor'), dataIndex: 'doctorname', key: 'doctorname', align: 'center' },
   { title: t('label.appointmentTime'), dataIndex: 'ordertime', key: 'ordertime', align: 'center' },
@@ -990,14 +996,15 @@ const revokeImageUrls = () => {
 };
 watch(() => userCaseModalVisible.value, (val) => { if (!val) revokeImageUrls(); });
 const showUserCaseModal = async (record) => {
+  console.log('查看用户病例', record);
   userCaseModalVisible.value = true;
   userCaseLoading.value = true;
   userCaseList.value = [];
   activeCaseKey.value = [];
   try {
     const res = await selectUserCaseList({
-      userId: String(record.orderuserid),
-      orderId: String(record.orderid),
+      userId: record.userId,
+      orderId: record.orderId,
     });
     if (res.code == 200 || res.code === '200') {
       const list = res.data?.data || [];
