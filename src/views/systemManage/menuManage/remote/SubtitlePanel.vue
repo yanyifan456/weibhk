@@ -145,10 +145,19 @@ const connectSubtitleWs = () => {
     try {
       const subtitle = JSON.parse(event.data);
       if (subtitle.type !== 'text') return;
-      // 统一展示 convertedText（后端已按当前 outputFormat 转换），
-      // 若为空（outputFormat=none 时 convertedText 可能与 originalText 相同）则降级用 originalText
+
+      // 后端已按 outputFormat 转换好 convertedText，直接展示；
+      // originalText 作为降级（en 格式时 convertedText 即为英文翻译结果）
       const displayText = subtitle.convertedText || subtitle.originalText || '';
-      const item = { ...subtitle, displayText };
+      if (!displayText) return;
+
+      // speakerRole 区分医生/患者：'doctor' | 'user'
+      const item = {
+        ...subtitle,
+        displayText,
+        speakerRole: subtitle.speakerRole || (subtitle.speakerId?.startsWith('doctor_') ? 'doctor' : 'user'),
+      };
+
       if (subtitle.isFinal) {
         subtitleList.value.push(item);
         currentLine.value = null;

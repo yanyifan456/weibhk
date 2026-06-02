@@ -975,6 +975,7 @@ const handleCallBegin = async (params) => {
   if (params.callId) callId.value = params.callId;
 
   try {
+    const doctorUserIdForSubtitle = `doctor_${selectedConsultation.value.doctorid}`;
     const res = await startRecording({
       roomId: String(roomId.value),
       userId: selectedConsultation.value.userserialnumber,
@@ -987,6 +988,8 @@ const handleCallBegin = async (params) => {
       patientOutputFormat: 'simplified',
       // 医生看到患者字幕的格式（由语言切换按钮控制）
       doctorOutputFormat: currentOutputFormat.value,
+      // 医生自己说话的字幕也推给医生（这样医生一条WS同时看到双方字幕）
+      doctorTargetUserId: doctorUserIdForSubtitle,
     });
     const data = res?.data || {};
     if (data.recordId) recordId.value = data.recordId;
@@ -996,7 +999,7 @@ const handleCallBegin = async (params) => {
     if (data.doctorTaskId) doctorTaskId.value = data.doctorTaskId;
     if (data.audioWsUrl) audioWsBaseUrl.value = data.audioWsUrl;
 
-    // 从 audioWsUrl 提取字幕 WS host（例：ws://192.168.100.14:8089）
+    // 从 audioWsUrl ��取字幕 WS host（例：ws://192.168.100.14:8089）
     if (data.audioWsUrl) {
       const match = data.audioWsUrl.match(/^(wss?:\/\/[^/]+)/);
       if (match) subtitleWsHostRef.value = match[1];
@@ -1097,6 +1100,7 @@ const handleSwitchLang = async (outputFormat) => {
       patientSpeakLanguage: 'zh-CN',
       patientOutputFormat: 'simplified',
       doctorOutputFormat: outputFormat,
+      doctorTargetUserId: `doctor_${selectedConsultation.value.doctorid}`,
     });
     const data = res?.data || {};
     if (data.recordId) recordId.value = data.recordId;
