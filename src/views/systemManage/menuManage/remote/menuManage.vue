@@ -987,8 +987,14 @@ const handleCallBegin = async (params) => {
     subtitleUserId.value = `doctor_${selectedConsultation.value.doctorid}`;
 
     // 启动双路音频采集：医生本地麦克风 + 患者远端音频帧
+    // 通过回调注入 TRTC 实例，避免 Composable 静态 import SDK
     if (data.audioWsUrl && data.doctorTaskId && data.userTaskId) {
-      startSpeech(data.audioWsUrl, data.doctorTaskId, data.userTaskId);
+      const getTRTCInstance = () => {
+        const engine = TUICallKitAPI.getTUICallEngineInstance();
+        const cloud = engine?.getTRTCCloudInstance?.();
+        return cloud?._trtc ?? null;
+      };
+      startSpeech(data.audioWsUrl, data.doctorTaskId, data.userTaskId, getTRTCInstance);
     }
   } catch (error) {
     console.error('调用startRecording失败:', error);
@@ -1994,7 +2000,7 @@ const saveEditPrescription = () => {
   editPrescriptionConfirmSignVisible.value = true;
 };
 /**
- * 修改处方单 - 第一步确认：截图 → 上传到处方接口（prescripfile） → 成功后弹第二步
+ * 修改处方单 - 第一步确认：截图 → 上传���处方接口（prescripfile） → 成功后弹第二步
  */
 const handleEditPrescriptionStep1Ok = async () => {
   console.log(detail.consultationMedicine)

@@ -15,7 +15,12 @@
  */
 
 import { ref } from 'vue';
-import { TUICallKitAPI } from '@tencentcloud/call-uikit-vue';
+
+/**
+ * 通过参数注入获取 TRTC 实例，避免在 Composable 内静态 import 腾讯云 SDK
+ * 父组件调用 start() 时传入 getTRTCInstance 回调
+ */
+let _getTRTCInstance = null;
 
 /** Float32Array PCM → Int16Array 转换 */
 function float32ToInt16(float32Array) {
@@ -97,10 +102,9 @@ export function useSpeechRecognition() {
 
     userAudioWs.onopen = async () => {
       try {
-        // 调用链：TUICallKitAPI → TUICallEngine → trtc-cloud-js-sdk → trtc-sdk-v5
-        const callEngine = TUICallKitAPI.getTUICallEngineInstance();
-        const trtcCloud = callEngine.getTRTCCloudInstance();
-        trtcInstance = trtcCloud._trtc; // trtc-sdk-v5 实例
+        // 通过父组件注入的回调获取 trtc-sdk-v5 实例，避免在此文件静态 import SDK
+        trtcInstance = _getTRTCInstance ? _getTRTCInstance() : null;
+        if (!trtcInstance) throw new Error('无法获取 TRTC 实例');
 
         // 启用远端音频帧事件（监听所有远端用户）
         await trtcInstance.callExperimentalAPI('enableAudioFrameEvent', {
@@ -134,11 +138,13 @@ export function useSpeechRecognition() {
 
   /**
    * 启动双路音频采集与推送
-   * @param {string} audioWsUrl  - 例如 "ws://192.168.100.14:8089/ws/audio/"
-   * @param {string} doctorTaskId - 医生端识别任务ID
-   * @param {string} userTaskId   - 患者端识别任务ID
+   * @param {string} audioWsUrl       - 例如 "ws://192.168.100.14:8089/ws/audio/"
+   * @param {string} doctorTaskId     - 医生端识别任务ID
+   * @param {string} userTaskId       - 患者端识别任务ID
+   * @param {Function} getTRTCInstance - 返回 trtc-sdk-v5 实例的回调，由父组件传入
    */
-  async function start(audioWsUrl, doctorTaskId, userTaskId) {
+  async function start(audioWsUrl, doctorTaskId, userTaskId, getTRTCInstance) {
+    _getTRTCInstance = getTRTCInstance || null;
     await Promise.all([
       startDoctorAudio(audioWsUrl, doctorTaskId),
       startUserAudio(audioWsUrl, userTaskId),
