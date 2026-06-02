@@ -704,6 +704,8 @@
     :ws-host="subtitleWsHostRef"
     :room-id="subtitleRoomId"
     :user-id="subtitleUserId"
+    :output-format="currentOutputFormat"
+    @switch-lang="handleSwitchLang"
     ref="subtitlePanelRef"
   />
 </template>
@@ -734,7 +736,7 @@ import {
   getfirstpreDetail,
   selectUserDetail
 } from '@/api/yyf';
-import { startRecording, stopRecording } from '@/api/video';
+import { startRecording, stopRecording, startSpeech, stopSpeech } from '@/api/video';
 import {
   insertConsultation,
   getConsultationDetail,
@@ -799,7 +801,7 @@ const handleReset = () => {
   getlists();
 };
 // -----------------------------------------------
-// 表格列定义
+// 表格列定��
 // -----------------------------------------------
 const columns = computed(() => [
   { title: t('label.appointmentNumber'), dataIndex: 'orderid', key: 'orderid', align: 'center' },
@@ -920,10 +922,16 @@ const subtitleWsHostRef = ref(subtitleWsHost);
 const subtitleRoomId = ref('');
 /** 字幕订阅用户 ID（医生端 userId） */
 const subtitleUserId = ref('');
-/** 语音识别任务 ID（备用，当前通过关闭音频WS自动停止） */
-const speechTaskId = ref('');
+/** 患者端识别任务ID（语言切换时需要停止旧任务、启动新任务） */
+const userTaskId = ref('');
+/** 医生端识别任务ID */
+const doctorTaskId = ref('');
+/** 音频WS基础地址（如 ws://192.168.100.14:8089/ws/audio/） */
+const audioWsBaseUrl = ref('');
+/** 当前医生看患者字幕的转换格式，默认 traditional（简→繁，适合粤语医生看普通话患者字幕） */
+const currentOutputFormat = ref('traditional');
 /** 双路音频采集 Composable */
-const { start: startSpeech, stop: stopSpeech } = useSpeechRecognition();
+const { start: startSpeechCapture, stop: stopSpeechCapture, restartUserAudio } = useSpeechRecognition();
 
 const roomId = ref('');
 const callId = ref('');
@@ -968,13 +976,20 @@ const handleCallBegin = async (params) => {
 
   try {
     const res = await startRecording({
-      roomId: roomId.value,
+      roomId: String(roomId.value),
       userId: selectedConsultation.value.userserialnumber,
       doctorId: selectedConsultation.value.doctorid,
       orderId: selectedConsultation.value.orderid,
+      // 医生看患者字幕的转换格式（默认 traditional：患者普通话简体 → 医生繁体）
+      doctorOutputFormat: currentOutputFormat.value,
     });
     const data = res?.data || {};
     if (data.recordId) recordId.value = data.recordId;
+
+    // 保存任务ID和音频WS地址，语言切换时需要用到
+    if (data.userTaskId) userTaskId.value = data.userTaskId;
+    if (data.doctorTaskId) doctorTaskId.value = data.doctorTaskId;
+    if (data.audioWsUrl) audioWsBaseUrl.value = data.audioWsUrl;
 
     // 从 audioWsUrl 提取字幕 WS host（例：ws://192.168.100.14:8089）
     if (data.audioWsUrl) {
@@ -987,14 +1002,13 @@ const handleCallBegin = async (params) => {
     subtitleUserId.value = `doctor_${selectedConsultation.value.doctorid}`;
 
     // 启动双路音频采集：医生本地麦克风 + 患者远端音频帧
-    // 通过回调注入 TRTC 实例，避免 Composable 静态 import SDK
     if (data.audioWsUrl && data.doctorTaskId && data.userTaskId) {
       const getTRTCInstance = () => {
         const engine = TUICallKitAPI.getTUICallEngineInstance();
         const cloud = engine?.getTRTCCloudInstance?.();
         return cloud?._trtc ?? null;
       };
-      startSpeech(data.audioWsUrl, data.doctorTaskId, data.userTaskId, getTRTCInstance);
+      startSpeechCapture(data.audioWsUrl, data.doctorTaskId, data.userTaskId, getTRTCInstance);
     }
   } catch (error) {
     console.error('调用startRecording失败:', error);
@@ -1026,7 +1040,7 @@ const handleCallEnd = async () => {
   speechTaskId.value = '';
 
   // 停止双路音频采集，关闭音频WS（Infusionalarm onClose 自动通知 Provider 停止识别）
-  await stopSpeech();
+  await stopSpeechCapture();
 
   if (recordId.value) {
     try {
@@ -1042,6 +1056,53 @@ const handleCallEnd = async () => {
   // 重置字幕相关状态
   subtitleRoomId.value = '';
   subtitleUserId.value = '';
+  userTaskId.value = '';
+  doctorTaskId.value = '';
+  audioWsBaseUrl.value = '';
+};
+
+/**
+ * 字幕语言切换：停止患者端旧识别任务，用新 outputFormat 启动新任务，重连患者音频 WS
+ * @param {'simplified'|'traditional'|'none'} outputFormat
+ */
+const handleSwitchLang = async (outputFormat) => {
+  if (!callActive.value) return;
+  if (currentOutputFormat.value === outputFormat) return;
+
+  // 停止旧患者端识别任务
+  if (userTaskId.value) {
+    try {
+      await stopSpeech(userTaskId.value);
+    } catch (e) {
+      console.error('停止旧识别任务失败:', e);
+    }
+  }
+
+  // 用新 outputFormat 启动新患者端识别任务
+  try {
+    const res = await startSpeech({
+      roomId: subtitleRoomId.value,
+      userId: selectedConsultation.value.userserialnumber,
+      language: 'zh-CN',
+      targetUserId: subtitleUserId.value,
+      outputFormat,
+    });
+    const newTaskId = res?.data?.taskId || res?.taskId;
+    if (newTaskId) {
+      userTaskId.value = newTaskId;
+      currentOutputFormat.value = outputFormat;
+
+      // 重连患者端音频 WS（使用新 taskId）
+      const getTRTCInstance = () => {
+        const engine = TUICallKitAPI.getTUICallEngineInstance();
+        const cloud = engine?.getTRTCCloudInstance?.();
+        return cloud?._trtc ?? null;
+      };
+      await restartUserAudio(audioWsBaseUrl.value, newTaskId, getTRTCInstance);
+    }
+  } catch (e) {
+    console.error('切换语言失败:', e);
+  }
 };
 onMounted(async () => {
   await init();
@@ -1633,7 +1694,7 @@ const submitWritePrescription = (detail) => {
   wpConfirmSignVisible.value = true;
 };
 /**
- * 处方单第一步确认：截图 → 上传到处方接口（prescripfile） → 成功后弹第二步
+ * 处方单第一步确认：截�� → 上传到处方接口（prescripfile） → 成功后弹第二步
  */
 const handlePrescriptionStep1Ok = async () => {
   prescriptionUploading.value = true;
@@ -1874,7 +1935,7 @@ const saveEditSuggestion = () => {
     if (!item.clazz) return message.warning(`請填寫【${item.name}】的藥品分類`);
     if (!item.spec) return message.warning(`請填寫【${item.name}】的藥品規格`);
   }
-  // 弹第一步：预览建议单 + 截图上传
+  // 弹第一步：预览建议单 + 截���上传
   editSuggestionImageUrl.value = '';
   editSuggestionConfirmSignVisible.value = true;
 };

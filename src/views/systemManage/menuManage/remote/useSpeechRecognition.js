@@ -152,6 +152,27 @@ export function useSpeechRecognition() {
   }
 
   /**
+   * 重启患者端音频 WS（语言切换时调用，医生端不中断）
+   * @param {string} audioWsUrl    - 音频WS基础地址
+   * @param {string} newUserTaskId - 新的患者端任务ID
+   * @param {Function} getTRTCInstance - 返回 trtc-sdk-v5 实例的回调
+   */
+  async function restartUserAudio(audioWsUrl, newUserTaskId, getTRTCInstance) {
+    // 关闭旧患者端 WS（Infusionalarm 自动停止旧任务）
+    if (userAudioWs) {
+      userAudioWs.close();
+      userAudioWs = null;
+    }
+    // 停止旧 TRTC 音频帧监听
+    if (trtcInstance && audioFrameHandler) {
+      trtcInstance.off('audio-frame', audioFrameHandler);
+      audioFrameHandler = null;
+    }
+    _getTRTCInstance = getTRTCInstance || _getTRTCInstance;
+    await startUserAudio(audioWsUrl, newUserTaskId);
+  }
+
+  /**
    * 停止双路音频采集，关闭 WS（Infusionalarm 自动通知 Provider 停止识别）
    */
   async function stop() {
@@ -197,5 +218,5 @@ export function useSpeechRecognition() {
     }
   }
 
-  return { start, stop, isCapturing };
+  return { start, stop, restartUserAudio, isCapturing };
 }

@@ -10,7 +10,7 @@
           v-for="lang in langOptions"
           :key="lang.value"
           class="lang-btn"
-          :class="{ active: currentLang === lang.value }"
+          :class="{ active: outputFormat === lang.value }"
           @click="switchLang(lang.value)"
         >
           {{ lang.label }}
@@ -78,7 +78,17 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  /**
+   * 当前转换格式，由父组件控制（simplified | traditional | none）
+   * 对应语言按钮的高亮状态
+   */
+  outputFormat: {
+    type: String,
+    default: 'traditional',
+  },
 });
+
+const emit = defineEmits(['switch-lang']);
 
 // ——— 语言选项（value 对应后端 outputFormat 参数） ———
 const langOptions = [
@@ -86,7 +96,6 @@ const langOptions = [
   { label: '繁體中文', value: 'traditional' },
   { label: 'English', value: 'none' },
 ];
-const currentLang = ref('simplified');
 
 // ——— 字幕列表 ———
 /** 已确定的字幕列表（isFinal=true） */
@@ -104,15 +113,11 @@ const statusText = computed(() => {
   return map[wsStatus.value] || '未连接';
 });
 
-// ——— 语言切换：断开旧连接、用新 outputFormat 重连，清空字幕列表 ———
+// ——— 语言切换：通知父组件重启识别任务（outputFormat 变更），本地清空字幕 ———
 const switchLang = (lang) => {
-  if (currentLang.value === lang) return;
-  currentLang.value = lang;
-  if (props.active && props.wsHost && props.roomId && props.userId) {
-    disconnectSubtitleWs();
-    clearSubtitles();
-    connectSubtitleWs();
-  }
+  if (props.outputFormat === lang) return;
+  clearSubtitles();
+  emit('switch-lang', lang);
 };
 
 // ——— 自动滚动到底部 ———
@@ -126,8 +131,8 @@ const scrollToBottom = async () => {
 // ——— WebSocket 字幕连接 ———
 const connectSubtitleWs = () => {
   if (!props.wsHost || !props.roomId || !props.userId) return;
-  // outputFormat 参数告诉后端本次连接需要哪种文本转换
-  const url = `${props.wsHost}/ws/subtitle/${props.roomId}/${props.userId}?outputFormat=${currentLang.value}`;
+  // 字幕 WS 路径：outputFormat 由后端在识别任务启动时已确定，无需 URL 参数
+  const url = `${props.wsHost}/ws/subtitle/${props.roomId}/${props.userId}`;
   wsStatus.value = 'connecting';
 
   subtitleWs = new WebSocket(url);
