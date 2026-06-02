@@ -734,7 +734,7 @@ import {
   getfirstpreDetail,
   selectUserDetail
 } from '@/api/yyf';
-import { startRecording, stopRecording, startSpeech, stopSpeech } from '@/api/video';
+import { startRecording, stopRecording } from '@/api/video';
 import {
   insertConsultation,
   getConsultationDetail,
@@ -970,28 +970,21 @@ const handleCallBegin = async (params) => {
       doctorId: selectedConsultation.value.doctorid,
       orderId: selectedConsultation.value.orderid,
     });
-    if (res?.data?.recordId) recordId.value = res.data.recordId;
+    const data = res?.data || {};
+    if (data.recordId) recordId.value = data.recordId;
+    if (data.taskId) speechTaskId.value = data.taskId;
+
+    // 从 audioWsUrl（如 ws://192.168.100.14:8089/ws/audio/）提取 host
+    if (data.audioWsUrl) {
+      const match = data.audioWsUrl.match(/^(wss?:\/\/[^/]+)/);
+      if (match) subtitleWsHostRef.value = match[1];
+    }
+    // doctorTaskId 格式：room_12345_doctor_doctor_001_xxx，从中提取 roomId 和 userId
+    // 直接使用接口约定的字符串 roomId 和 doctor userId
+    subtitleRoomId.value = String(roomId.value);
+    subtitleUserId.value = `doctor_${selectedConsultation.value.doctorid}`;
   } catch (error) {
     console.error('调用startRecording失败:', error);
-  }
-
-  // 启动语音识别，获取 taskId 后再激活字幕面板
-  try {
-    const doctorId = selectedConsultation.value.doctorid;
-    const wsRoomId = String(roomId.value);
-    const wsUserId = `doctor_${doctorId}`;
-    const speechRes = await startSpeech({
-      roomId: wsRoomId,
-      userId: wsUserId,
-      language: 'zh-CN',
-    });
-    if (speechRes?.data?.taskId) {
-      speechTaskId.value = speechRes.data.taskId;
-    }
-    subtitleRoomId.value = wsRoomId;
-    subtitleUserId.value = wsUserId;
-  } catch (error) {
-    console.error('启动语音识别失败:', error);
   }
 
   // 所有字幕参数就绪后，再激活倒计时 & 字幕面板
@@ -1017,15 +1010,7 @@ const handleCallEnd = async () => {
   // 停止倒计时 & 字幕面板
   callActive.value = false;
 
-  // 停止语音识别
-  if (speechTaskId.value) {
-    try {
-      await stopSpeech(speechTaskId.value);
-    } catch (error) {
-      console.error('停止语音识别失败:', error);
-    }
-    speechTaskId.value = '';
-  }
+  speechTaskId.value = '';
 
   if (recordId.value) {
     try {
