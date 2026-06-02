@@ -139,7 +139,7 @@ import { jiaoyan, getuser } from '@/api/yyf.js';
 import { getMsgCount } from '@/api/base.js';
 import { genTestUserSig } from '@/debug/GenerateTestUserSig.js';
 import subtitlePanel from '@/components/subtitlePanel/subtitlePanel.vue';
-import { connectSubtitleWs } from '@/utils/speechWs.js';
+import { connectSubtitleWs, resolveSubtitleWsHost } from '@/utils/speechWs.js';
 
 // ============================================================
 // 字幕相关状态
@@ -397,34 +397,38 @@ try {
 		try {
 			// 通话开始：连接字幕 WS，创建原生浮层
 			uni.$TUICallKit.on('onCallBegin', async (data) => {
-				console.log('通话开始:', data);
-				const roomId = data.roomId || data.roomID || data.roomIdStr;
-				const userId = uni.getStorageSync('phone');
+				// UniApp TUICallKit 插件回调字段：roomID（大写D）
+				const roomId = String(data.roomID || data.roomId || data.roomIDStr || '');
+				// userId 与 Web 端 startRecording 传的 userId（手机号）一致，去掉非法字符
+				const rawPhone = uni.getStorageSync('phone') || '';
+				const userId = String(rawPhone).replace(/[^a-zA-Z0-9_-]/g, '');
+
+				if (!roomId || !userId) return;
 
 				// 重置字幕状态
 				subtitleList.value = [];
 				currentSubtitleLine.value = null;
 				subtitleVisible.value = true;
 
+				// 从存储的 API 地址推导字幕 WS host
+				const apiBaseUrl = uni.getStorageSync('apiBaseUrl') || 'http://192.168.100.14:18085';
+				const wsHost = resolveSubtitleWsHost(apiBaseUrl);
+
 				// 连接字幕 WS（患者仅接收，不采集音频）
 				try {
-					const { socketTask, close } = connectSubtitleWs(roomId, userId);
+					const { socketTask, close } = connectSubtitleWs(wsHost, roomId, userId);
 					subtitleWsClose = close;
 
-					socketTask.onOpen(() => console.log('[SubtitleWs] 已连接'));
+					socketTask.onOpen(() => {});
 					socketTask.onMessage((res) => {
 						try {
 							const subtitle = JSON.parse(res.data);
 							handleSubtitleMessage(subtitle);
-						} catch (e) {
-							console.error('[SubtitleWs] 消息解析失败:', e);
-						}
+						} catch (e) {}
 					});
-					socketTask.onClose(() => console.log('[SubtitleWs] 已关闭'));
-					socketTask.onError((err) => console.error('[SubtitleWs] 错误:', err));
-				} catch (e) {
-					console.error('[SubtitleWs] 连接失败:', e);
-				}
+					socketTask.onClose(() => {});
+					socketTask.onError(() => {});
+				} catch (e) {}
 
 				// 创建原生字幕浮层（覆盖在 TUICallKit 上方）
 				showNativeSubtitle();
@@ -452,7 +456,7 @@ try {
 			});
 
 			uni.$TUICallKit.on('onInvited', (data) => {
-				console.log('收到来电邀请:', data);
+				console.log('收到来电邀���:', data);
 			});
 
 			uni.$TUICallKit.on('onError', (err) => {

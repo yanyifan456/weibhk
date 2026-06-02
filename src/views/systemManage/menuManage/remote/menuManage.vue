@@ -1062,46 +1062,55 @@ const handleCallEnd = async () => {
 };
 
 /**
- * 字幕语言切换：停止患者端旧识别任务，用新 outputFormat 启动新任务，重连患者音频 WS
+ * 字幕语言切换：停止患者端旧识别任务，用新 doctorOutputFormat 启动新任务，重连患者音频 WS 和字幕 WS
  * @param {'simplified'|'traditional'|'none'} outputFormat
  */
 const handleSwitchLang = async (outputFormat) => {
   if (!callActive.value) return;
   if (currentOutputFormat.value === outputFormat) return;
 
-  // 停止旧患者端识别任务
+  // 先更新 UI 状态，立即切换高亮按钮
+  currentOutputFormat.value = outputFormat;
+
+  // 停止旧患者端识别任务（fire-and-forget，不阻断后续流程）
   if (userTaskId.value) {
-    try {
-      await stopSpeech(userTaskId.value);
-    } catch (e) {
-      console.error('停止旧识别任务失败:', e);
-    }
+    stopSpeech(userTaskId.value).catch(() => {});
   }
 
-  // 用新 outputFormat 启动新患者端识别任务
   try {
+    // 重启患者端识别任务：
+    //   userId       = 患者手机号（即 userserialnumber）
+    //   language     = 'zh-CN'（患者说普通话，固定不变）
+    //   targetUserId = 'doctor_{doctorId}'（字幕推给医生）
+    //   outputFormat = 新格式（医生看到患者字幕的转换方式）
     const res = await startSpeech({
       roomId: subtitleRoomId.value,
       userId: selectedConsultation.value.userserialnumber,
       language: 'zh-CN',
-      targetUserId: subtitleUserId.value,
+      targetUserId: `doctor_${selectedConsultation.value.doctorid}`,
       outputFormat,
     });
-    const newTaskId = res?.data?.taskId || res?.taskId;
+    const newTaskId = res?.data?.taskId || res?.data?.data?.taskId;
     if (newTaskId) {
       userTaskId.value = newTaskId;
-      currentOutputFormat.value = outputFormat;
 
-      // 重连患者端音频 WS（使用新 taskId）
+      // 重连患者端音频 WS（新 taskId 绑定新 outputFormat）
       const getTRTCInstance = () => {
         const engine = TUICallKitAPI.getTUICallEngineInstance();
         const cloud = engine?.getTRTCCloudInstance?.();
         return cloud?._trtc ?? null;
       };
-      await restartUserAudio(audioWsBaseUrl.value, newTaskId, getTRTCInstance);
+      restartUserAudio(audioWsBaseUrl.value, newTaskId, getTRTCInstance).catch(() => {});
+
+      // 重连字幕 WS，后端将按新 outputFormat 推送转换后的字幕，清空旧字幕
+      subtitlePanelRef.value?.clearSubtitles();
+      subtitlePanelRef.value?.disconnectSubtitleWs();
+      subtitlePanelRef.value?.connectSubtitleWs();
     }
   } catch (e) {
     console.error('切换语言失败:', e);
+    // 回滚 UI 状态
+    currentOutputFormat.value = currentOutputFormat.value;
   }
 };
 onMounted(async () => {
@@ -1416,7 +1425,7 @@ const saveConsultation = () => {
       !item.dosageForm && !item.frenquency && !item.duration && !item.directionsRoute && !item.specialPurpose;
     if (isEmpty) continue;
     if (!item.name) return message.warning('請填寫手動新增藥品名稱');
-    if (!item.medicineCun) return message.warning(`請填寫【${item.name}】的數量`);
+    if (!item.medicineCun) return message.warning(`請填寫【${item.name}】的數��`);
     if (!item.dosageForm) return message.warning(`請填寫【${item.name}】的劑型`);
     if (!item.frenquency) return message.warning(`請填寫【${item.name}】的頻次`);
     if (!item.duration) return message.warning(`請填寫【${item.name}】的療程`);
@@ -2008,7 +2017,7 @@ const editPrescriptionConfirmNameVisible = ref(false);
 const editPrescriptionPreviewRef = ref(null);
 /** 修改处方单上传中标志 */
 const editPrescriptionUploading = ref(false);
-/** 修改处方单上传成功后的图片 URL */
+/** 修改处方单上传成功���的图片 URL */
 const editPrescriptionImageUrl = ref('');
 const epUpload = useImageUpload(
   () => editPrescriptionRecord.value?.userserialnumber || editPrescriptionRecord.value?.serialNumber || '',
