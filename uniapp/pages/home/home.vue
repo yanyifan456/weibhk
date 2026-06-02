@@ -119,159 +119,68 @@
 			</view>
 		</view>
 
-		<!-- 非通话中的字幕预览面板（通话中使用原生浮层） -->
-		<subtitle-panel
-			:visible="subtitleVisible"
-			:in-call="false"
-			:subtitle-list="subtitleList"
-			:current-line="currentSubtitleLine"
-			@switch-lang="onSwitchLang"
-		/>
+		<!-- 通话中字幕面板：视频最小化后显示在页面中 -->
+		<view v-if="subtitleVisible" class="subtitle-wrap">
+			<!-- 语言切换按钮 -->
+			<view class="lang-bar">
+				<view
+					v-for="lang in langOptions"
+					:key="lang.value"
+					class="lang-btn"
+					:class="{ 'lang-btn--active': currentLang === lang.value }"
+					@click="onSwitchLang(lang.value)"
+				>
+					{{ lang.label }}
+				</view>
+			</view>
+
+			<!-- 字幕内容区 -->
+			<scroll-view class="subtitle-scroll" scroll-y :scroll-top="subtitleScrollTop">
+				<view v-for="(item, idx) in subtitleList" :key="idx" class="subtitle-row">
+					<text class="speaker-tag" :class="item.speakerRole === 'doctor' ? 'speaker-doctor' : 'speaker-patient'">
+						{{ item.speakerRole === 'doctor' ? '醫生' : '患者' }}
+					</text>
+					<text class="subtitle-text">{{ getDisplayText(item) }}</text>
+				</view>
+				<!-- 中间结果（正在识别中） -->
+				<view v-if="currentSubtitleLine" class="subtitle-row subtitle-row--interim">
+					<text class="speaker-tag" :class="currentSubtitleLine.speakerRole === 'doctor' ? 'speaker-doctor' : 'speaker-patient'">
+						{{ currentSubtitleLine.speakerRole === 'doctor' ? '醫生' : '患者' }}
+					</text>
+					<text class="subtitle-text">{{ getDisplayText(currentSubtitleLine) }}...</text>
+				</view>
+			</scroll-view>
+		</view>
 	</view>
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue';
+import { reactive, ref, nextTick } from 'vue';
 import { getSystemInfo } from '@/utils/global.js';
 import { onPullDownRefresh, onLoad, onShow } from '@dcloudio/uni-app';
 import { updateTabbarBadge } from '@/utils/tabBarBadge.js';
 import { jiaoyan, getuser } from '@/api/yyf.js';
 import { getMsgCount } from '@/api/base.js';
 import { genTestUserSig } from '@/debug/GenerateTestUserSig.js';
-import subtitlePanel from '@/components/subtitlePanel/subtitlePanel.vue';
 import { connectSubtitleWs, resolveSubtitleWsHost } from '@/utils/speechWs.js';
 
 // ============================================================
 // 字幕相关状态
 // ============================================================
-/** 字幕列表（isFinal=true 的最终结果） */
 const subtitleList = ref([]);
-/** 当前中间结果行（isFinal=false） */
 const currentSubtitleLine = ref(null);
-/** 字幕面板是否可见 */
 const subtitleVisible = ref(false);
-/** 当前显示语言：simplified | traditional | none */
+const subtitleScrollTop = ref(0);
 const currentLang = ref('simplified');
-/** 字幕 WS 关闭函数 */
 let subtitleWsClose = null;
-/** 原生字幕浮层实例（通话中覆盖在 TUICallKit 上方） */
-let nativeSubtitleView = null;
-/** 原生语言切换按钮浮层 */
-let nativeLangView = null;
 
-// ============================================================
-// 语言选项（与 Web 端对齐）
-// ============================================================
 const langOptions = [
 	{ label: '简体中文', value: 'simplified' },
 	{ label: '繁體中文', value: 'traditional' },
 	{ label: 'English',  value: 'none' },
 ];
 
-// ============================================================
-// 原生浮层（通话中用，覆盖在 TUICallKit 原生层上方）
-// ============================================================
-
-/**
- * 获取 TUICallKit 通话所在的原生 window。
- * TUICallKit 插件通话时会打开一个新的原生 WebviewObject，
- * 通过遍历所有 webview 找到 id 包含 "TUICallKit" 的那个。
- */
-const getCallWindow = () => {
-	// #ifdef APP-PLUS
-	try {
-		const wins = plus.webview.all();
-		for (let i = wins.length - 1; i >= 0; i--) {
-			const id = wins[i].id || '';
-			console.log('[v0] webview id:', id);
-			if (id.toLowerCase().includes('tuicall') || id.toLowerCase().includes('call')) {
-				return wins[i];
-			}
-		}
-		// 找不到时取最顶层 webview（通话时它一定是最新打开的）
-		return wins[wins.length - 1] || plus.webview.currentWebview();
-	} catch (e) {
-		return plus.webview.currentWebview();
-	}
-	// #endif
-};
-
-/** 创建字幕原生浮层，挂载到通话窗口 */
-const showNativeSubtitle = () => {
-	// #ifdef APP-PLUS
-	try {
-		// 延迟 800ms 等待通话窗口完全打开
-		setTimeout(() => {
-			try {
-				const callWin = getCallWindow();
-				console.log('[v0] 目标通话窗口:', callWin ? callWin.id : 'null');
-
-				// 语言切换按钮区域
-				nativeLangView = new plus.nativeObj.View('langSwitchView', {
-					top: '51%',
-					left: '5%',
-					width: '90%',
-					height: '40px',
-					backgroundColor: 'rgba(0,0,0,0.01)',
-				});
-
-				// 字幕文字区域
-				nativeSubtitleView = new plus.nativeObj.View('subtitleView', {
-					top: '56%',
-					left: '5%',
-					width: '90%',
-					height: '160px',
-					backgroundColor: 'rgba(0,0,0,0.01)',
-				});
-
-				// 挂载到通话窗口（不指定 parent 时默认挂到 currentWebview，通话是另一个 window 所以需要显式挂载）
-				nativeLangView.show(callWin);
-				nativeSubtitleView.show(callWin);
-
-				updateNativeLangBar();
-				updateNativeSubtitle();
-
-				// 点击语言切换按钮
-				nativeLangView.addEventListener('click', (e) => {
-					const x = e.screenX || 0;
-					const screenWidth = plus.screen.resolutionWidth;
-					const sectionWidth = (screenWidth * 0.9) / 3;
-					const offsetX = x - screenWidth * 0.05;
-					const idx = Math.max(0, Math.min(2, Math.floor(offsetX / sectionWidth)));
-					const lang = langOptions[idx];
-					if (lang) onSwitchLang(lang.value);
-				});
-
-				console.log('[v0] 原生字幕浮层已创建');
-			} catch (inner) {
-				console.error('[v0] showNativeSubtitle 内层失败:', inner);
-			}
-		}, 800);
-	} catch (e) {
-		console.error('[v0] showNativeSubtitle 外层失败:', e);
-	}
-	// #endif
-};
-
-/** 隐藏并销毁原生字幕浮层 */
-const hideNativeSubtitle = () => {
-	// #ifdef APP-PLUS
-	try {
-		if (nativeSubtitleView) {
-			nativeSubtitleView.close();
-			nativeSubtitleView = null;
-		}
-		if (nativeLangView) {
-			nativeLangView.close();
-			nativeLangView = null;
-		}
-	} catch (e) {
-		console.error('[Subtitle] hideNativeSubtitle 失败:', e);
-	}
-	// #endif
-};
-
-/** 获取要显示的文本：simplified 显示 convertedText，其余显示 originalText */
+/** 根据当前语言取显示文本 */
 const getDisplayText = (item) => {
 	if (!item) return '';
 	if (currentLang.value === 'simplified') {
@@ -280,97 +189,17 @@ const getDisplayText = (item) => {
 	return item.originalText || item.convertedText || '';
 };
 
-/** 更新语言切换按钮原生浮层 */
-const updateNativeLangBar = () => {
-	// #ifdef APP-PLUS
-	if (!nativeLangView) return;
-	try {
-		const drawCmds = langOptions.map((lang, idx) => {
-			const isActive = currentLang.value === lang.value;
-			// 每个按钮宽度约 33%，留 1% 间距
-			const btnW = 32;
-			const left = idx * 33 + '%';
-			return [
-				{
-					tag: 'rect',
-					color: isActive ? '#4080ff' : 'rgba(0,0,0,0.5)',
-					rectStyles: {
-						borderColor: isActive ? '#4080ff' : 'rgba(255,255,255,0.4)',
-						borderWidth: '1px',
-						borderRadius: '14px',
-					},
-					position: { top: '2px', left, width: btnW + '%', height: '36px' },
-				},
-				{
-					tag: 'font',
-					text: lang.label,
-					textStyles: {
-						size: '11px',
-						color: '#ffffff',
-						align: 'center',
-						verticalAlign: 'middle',
-					},
-					position: { top: '2px', left, width: btnW + '%', height: '36px' },
-				},
-			];
-		}).flat();
-		nativeLangView.draw(drawCmds);
-	} catch (e) {
-		console.error('[v0] updateNativeLangBar 失败:', e);
-	}
-	// #endif
+/** 语言切换：仅切换前端显示字段，不重连 WS */
+const onSwitchLang = (lang) => {
+	currentLang.value = lang;
 };
 
-/** 更新原生字幕内容（显示最近 2 条 + 1 条中间结果） */
-const updateNativeSubtitle = () => {
-	// #ifdef APP-PLUS
-	if (!nativeSubtitleView) return;
-	try {
-		const recent = subtitleList.value.slice(-2);
-		const lines = [...recent];
-		if (currentSubtitleLine.value) lines.push(currentSubtitleLine.value);
-
-		const drawCmds = [];
-		// 半透明背景
-		drawCmds.push({
-			tag: 'rect',
-			color: 'rgba(0,0,0,0.6)',
-			rectStyles: { borderRadius: '8px' },
-			position: { top: '0px', left: '0px', width: '100%', height: '100%' },
-		});
-
-		const lineHeight = 48;
-		lines.forEach((item, idx) => {
-			const text = getDisplayText(item);
-			const role = item.speakerRole === 'doctor' ? '醫生' : '患者';
-			const roleColor = item.speakerRole === 'doctor' ? '#a8c8ff' : '#b7eb8f';
-			const top = idx * lineHeight + 8;
-			// 说话人标签
-			drawCmds.push({
-				tag: 'font',
-				text: role,
-				textStyles: { size: '11px', color: roleColor, align: 'left', verticalAlign: 'middle' },
-				position: { top: top + 'px', left: '4px', width: '38px', height: lineHeight + 'px' },
-			});
-			// 字幕文字
-			drawCmds.push({
-				tag: 'font',
-				text,
-				textStyles: { size: '14px', color: '#ffffff', align: 'left', verticalAlign: 'middle', whiteSpace: 'normal' },
-				position: { top: top + 'px', left: '44px', width: 'calc(100% - 48px)', height: lineHeight + 'px' },
-			});
-		});
-
-		nativeSubtitleView.draw(drawCmds);
-	} catch (e) {
-		console.error('[Subtitle] updateNativeSubtitle 失败:', e);
-	}
-	// #endif
+/** 滚动到底部 */
+const scrollToBottom = () => {
+	nextTick(() => {
+		subtitleScrollTop.value = subtitleList.value.length * 9999;
+	});
 };
-
-// ============================================================
-// 字幕 WebSocket
-// ============================================================
 
 /** 处理收到的字幕消息 */
 const handleSubtitleMessage = (subtitle) => {
@@ -378,21 +207,13 @@ const handleSubtitleMessage = (subtitle) => {
 	if (subtitle.isFinal) {
 		subtitleList.value.push(subtitle);
 		currentSubtitleLine.value = null;
-		// 超过 100 条时截断
 		if (subtitleList.value.length > 100) {
 			subtitleList.value = subtitleList.value.slice(-80);
 		}
 	} else {
 		currentSubtitleLine.value = subtitle;
 	}
-	updateNativeSubtitle();
-};
-
-/** 语言切换：仅切换前端显示字段，不重连 WS */
-const onSwitchLang = (lang) => {
-	currentLang.value = lang;
-	updateNativeLangBar();
-	updateNativeSubtitle();
+	scrollToBottom();
 };
 
 // ============================================================
@@ -401,11 +222,7 @@ const onSwitchLang = (lang) => {
 // #ifdef APP-PLUS
 try {
 	const TUICallKit = uni.requireNativePlugin('TencentCloud-TUICallKit');
-	console.log('TUICallKit:', TUICallKit);
-
-	if (!TUICallKit) {
-		throw new Error('插件��加载成功');
-	}
+	if (!TUICallKit) throw new Error('插件未加载');
 
 	const userID = uni.getStorageSync('phone');
 	const validUserID = String(userID).replace(/[^a-zA-Z0-9_-]/g, '');
@@ -418,10 +235,7 @@ try {
 			SDKAppID: sdkAppID,
 			userID: validUserID,
 			userSig,
-			success: (res) => {
-				console.log('TUICallKit 登录成功:', res);
-				setupTUICallKitListeners();
-			},
+			success: () => { setupTUICallKitListeners(); },
 			fail: (err) => {
 				console.error('TUICallKit 登录失败:', err);
 				uni.showToast({ title: '通话服务登录失败', icon: 'none' });
@@ -435,77 +249,49 @@ try {
 		uni.$TUICallKit.setSelfInfo({
 			nickName: uni.getStorageSync('userName') || '患者',
 			avatar: '',
-			success: (res) => console.log('setSelfInfo 成功:', res),
-			fail: (err) => console.error('setSelfInfo 失败:', err)
+			success: () => {},
+			fail: () => {}
 		});
-	} catch (e) {
-		console.error('setSelfInfo 同步异常:', e);
-	}
+	} catch (e) {}
 
 	const setupTUICallKitListeners = () => {
 		try {
-			// 通话开始：连接字幕 WS，创建原生浮层
-			uni.$TUICallKit.on('onCallBegin', async (data) => {
-				// UniApp TUICallKit 插件回调字段：roomID（大写D）
+			// 通话开始：连接字幕 WS
+			uni.$TUICallKit.on('onCallBegin', (data) => {
 				const roomId = String(data.roomID || data.roomId || data.roomIDStr || '');
-				// userId 与 Web 端 startRecording 传的 userId（手机号）一致，去掉非法字符
 				const rawPhone = uni.getStorageSync('phone') || '';
 				const userId = String(rawPhone).replace(/[^a-zA-Z0-9_-]/g, '');
 
 				if (!roomId || !userId) return;
 
-				// 重置字幕状态
 				subtitleList.value = [];
 				currentSubtitleLine.value = null;
+				currentLang.value = 'simplified';
 				subtitleVisible.value = true;
 
-				// 从存储的 API 地址推导字幕 WS host
 				const apiBaseUrl = uni.getStorageSync('apiBaseUrl') || 'http://192.168.100.14:18085';
 				const wsHost = resolveSubtitleWsHost(apiBaseUrl);
 
-				// 连接字幕 WS（患者仅接收，不采集音频）
-				console.log('[v0] 字幕WS参数:', { wsHost, roomId, userId });
 				try {
 					const { socketTask, close } = connectSubtitleWs(wsHost, roomId, userId);
 					subtitleWsClose = close;
-
-					socketTask.onOpen(() => {
-						console.log('[v0] 字幕WS已连接');
-					});
+					socketTask.onOpen(() => {});
 					socketTask.onMessage((res) => {
 						try {
-							const subtitle = JSON.parse(res.data);
-							handleSubtitleMessage(subtitle);
+							handleSubtitleMessage(JSON.parse(res.data));
 						} catch (e) {}
 					});
-					socketTask.onClose((res) => {
-						console.log('[v0] 字幕WS已关闭', res);
-					});
-					socketTask.onError((err) => {
-						console.error('[v0] 字幕WS错误:', err);
-					});
-				} catch (e) {
-					console.error('[v0] connectSubtitleWs 异常:', e);
-				}
-
-				// 创建原生字幕浮层（覆盖在 TUICallKit 上方）
-				showNativeSubtitle();
+					socketTask.onClose(() => {});
+					socketTask.onError(() => {});
+				} catch (e) {}
 			});
 
-			// 通话结束：关闭字幕 WS，清理原生浮层
-			uni.$TUICallKit.on('onCallEnd', (data) => {
-				console.log('通话结束:', data);
-
-				// 关闭字幕 WS
+			// 通话结束：关闭字幕 WS，3秒后隐藏面板
+			uni.$TUICallKit.on('onCallEnd', () => {
 				if (subtitleWsClose) {
 					subtitleWsClose();
 					subtitleWsClose = null;
 				}
-
-				// 隐藏原生浮层
-				hideNativeSubtitle();
-
-				// 延迟清理字幕状态（让用户看完最后的字幕）
 				setTimeout(() => {
 					subtitleVisible.value = false;
 					subtitleList.value = [];
@@ -513,15 +299,8 @@ try {
 				}, 3000);
 			});
 
-			uni.$TUICallKit.on('onInvited', (data) => {
-				console.log('收到来电邀���:', data);
-			});
-
-			uni.$TUICallKit.on('onError', (err) => {
-				console.error('TUICallKit 错误:', err);
-			});
-
-			console.log('TUICallKit 监听器设置完成');
+			uni.$TUICallKit.on('onInvited', () => {});
+			uni.$TUICallKit.on('onError', () => {});
 		} catch (e) {
 			console.error('设置监听器失败:', e);
 		}
@@ -536,18 +315,8 @@ try {
 // 轮播图
 // ============================================================
 const swiperList = reactive([
-	{
-		id: 1,
-		name: 'swiper1',
-		url: '/static/images/swiper1.png',
-		path: false
-	},
-	{
-		id: 2,
-		name: 'swiper2',
-		url: 'https://doctor.gzxinxingyiyuan.com/images/image/swiper/item3.png',
-		path: '/pages/home/list/domainShop'
-	}
+	{ id: 1, name: 'swiper1', url: '/static/images/swiper1.png', path: false },
+	{ id: 2, name: 'swiper2', url: 'https://doctor.gzxinxingyiyuan.com/images/image/swiper/item3.png', path: '/pages/home/list/domainShop' }
 ]);
 
 const handleClickSwiper = (v) => {
@@ -565,54 +334,23 @@ const handleClickSearch = () => {
 // 功能区
 // ============================================================
 const domainList = reactive([
-	{
-		title: '求診醫療',
-		subTitle: '環球港醫網全程為您服務',
-		actionText: '去看病',
-		bgc: 'https://doctor.gzxinxingyiyuan.com/images/image/home/mainBgc1.png',
-		path: '/pages/home/list/domainDoctor'
-	},
-	{
-		title: '華興藥房',
-		subTitle: '一键購藥 極速送達',
-		actionText: '去買藥',
-		bgc: 'https://doctor.gzxinxingyiyuan.com/images/image/home/mainBgc2.png',
-		path: '/pages/home/list/domainShop'
-	},
-	{
-		title: '醫療諮詢',
-		subTitle: 'AI諮詢 守護安康',
-		actionText: '去諮詢',
-		bgc: '/static/images/mainBgc3.png',
-		path: '/pages/home/list/domainConsult'
-	},
-	{
-		title: '我的指標',
-		subTitle: '健康指標在綫查看',
-		actionText: '去查看',
-		bgc: 'https://doctor.gzxinxingyiyuan.com/images/image/home/mainBgc4.png',
-		path: '/pages/home/list/domainIndicator'
-	}
+	{ title: '求診醫療', subTitle: '環球港醫網全程為您服務', actionText: '去看病', bgc: 'https://doctor.gzxinxingyiyuan.com/images/image/home/mainBgc1.png', path: '/pages/home/list/domainDoctor' },
+	{ title: '華興藥房', subTitle: '一键購藥 極速送達', actionText: '去買藥', bgc: 'https://doctor.gzxinxingyiyuan.com/images/image/home/mainBgc2.png', path: '/pages/home/list/domainShop' },
+	{ title: '醫療諮詢', subTitle: 'AI諮詢 守護安康', actionText: '去諮詢', bgc: '/static/images/mainBgc3.png', path: '/pages/home/list/domainConsult' },
+	{ title: '我的指標', subTitle: '健康指標綫查看', actionText: '去查看', bgc: 'https://doctor.gzxinxingyiyuan.com/images/image/home/mainBgc4.png', path: '/pages/home/list/domainIndicator' }
 ]);
 
 const handleClickDomain = async (url) => {
 	const needAuthCheckPages = ['/pages/home/list/domainDoctor', '/pages/home/list/domainShop'];
-	if (!needAuthCheckPages.includes(url)) {
-		return uni.navigateTo({ url });
-	}
+	if (!needAuthCheckPages.includes(url)) return uni.navigateTo({ url });
 	const userId = uni.getStorageSync('userId');
 	try {
 		const res = await jiaoyan({ userId });
 		if (res.code === '200') {
 			if (res.data.signTag === '0') {
 				uni.showModal({
-					title: '提示',
-					content: '未签署合同!',
-					showCancel: false,
-					confirmText: '确定',
-					success: (result) => {
-						if (result.confirm) uni.reLaunch({ url: '/pages/mine/mine' });
-					}
+					title: '提示', content: '未签署合同!', showCancel: false, confirmText: '确定',
+					success: (result) => { if (result.confirm) uni.reLaunch({ url: '/pages/mine/mine' }); }
 				});
 				return;
 			}
@@ -631,9 +369,7 @@ const handleClickDomain = async (url) => {
 const checkUserInfoComplete = (userData) => {
 	const requiredFields = ['userName', 'sex', 'birthyDay', 'height', 'weight', 'serialNumber', 'orgName'];
 	for (const field of requiredFields) {
-		if (!userData[field] || userData[field] === '' || userData[field] === null) {
-			return false;
-		}
+		if (!userData[field] || userData[field] === '' || userData[field] === null) return false;
 	}
 	return true;
 };
@@ -644,13 +380,8 @@ const initPageCheck = async () => {
 		const jiaoyanRes = await jiaoyan({ userId });
 		if (jiaoyanRes.code === '200' && jiaoyanRes.data.signTag === '0') {
 			uni.showModal({
-				title: '提示',
-				content: '未签署合同!',
-				showCancel: false,
-				confirmText: '确定',
-				success: (result) => {
-					if (result.confirm) uni.reLaunch({ url: '/pages/mine/mine' });
-				}
+				title: '提示', content: '未签署合同!', showCancel: false, confirmText: '确定',
+				success: (result) => { if (result.confirm) uni.reLaunch({ url: '/pages/mine/mine' }); }
 			});
 			return;
 		}
@@ -659,47 +390,22 @@ const initPageCheck = async () => {
 			const userData = userRes.data.data;
 			if (!checkUserInfoComplete(userData)) {
 				uni.showModal({
-					title: '提示',
-					content: '请完善个人信息!',
-					showCancel: false,
-					confirmText: '确定',
-					success: (result) => {
-						if (result.confirm) uni.navigateTo({ url: '/pages/mine/minelist/EditProfile' });
-					}
+					title: '提示', content: '请完善个人信息!', showCancel: false, confirmText: '确定',
+					success: (result) => { if (result.confirm) uni.navigateTo({ url: '/pages/mine/minelist/EditProfile' }); }
 				});
 			}
 		}
-	} catch (error) {
-		console.error('initPageCheck error:', error);
-	}
+	} catch (error) {}
 };
 
 // ============================================================
 // 金刚区
 // ============================================================
 const mainList = reactive([
-	{
-		name: 'https://doctor.gzxinxingyiyuan.com/images/image/home/girdIcon3.png',
-		title: '港醫講醫',
-		path: '/pages/home/infomation/infomation'
-	},
-	{
-		name: 'https://doctor.gzxinxingyiyuan.com/images/image/home/girdIcon1.png',
-		title: '我的設備',
-		path: '',
-		flag: 'navigate'
-	},
-	{
-		name: 'https://doctor.gzxinxingyiyuan.com/images/image/home/girdIcon2.png',
-		title: '我的親屬',
-		path: false
-	},
-	{
-		name: 'https://doctor.gzxinxingyiyuan.com/images/image/home/girdIcon4.png',
-		title: '心裏診療',
-		path: false,
-		flag: 'webview'
-	}
+	{ name: 'https://doctor.gzxinxingyiyuan.com/images/image/home/girdIcon3.png', title: '港醫講醫', path: '/pages/home/infomation/infomation' },
+	{ name: 'https://doctor.gzxinxingyiyuan.com/images/image/home/girdIcon1.png', title: '我的設備', path: '', flag: 'navigate' },
+	{ name: 'https://doctor.gzxinxingyiyuan.com/images/image/home/girdIcon2.png', title: '我的親屬', path: false },
+	{ name: 'https://doctor.gzxinxingyiyuan.com/images/image/home/girdIcon4.png', title: '心裏診療', path: false, flag: 'webview' }
 ]);
 
 const clickMainList = (val) => {
@@ -707,8 +413,8 @@ const clickMainList = (val) => {
 	if (val.flag === 'navigate') {
 		plus.runtime.launchApplication(
 			{ pname: 'www.ruoguzhichuang.com' },
-			() => console.log('打开成功'),
-			(err) => console.log('打开失败', err)
+			() => {},
+			() => {}
 		);
 	}
 };
@@ -745,17 +451,14 @@ onShow(() => {
 	width: 100%;
 	height: 384rpx;
 }
-
 .swiper {
 	width: 100%;
 	height: 100%;
 }
-
 .swiper-item {
 	width: 100%;
 	height: 100%;
 }
-
 .home-content-box {
 	width: 100%;
 	min-height: 200rpx;
@@ -766,7 +469,6 @@ onShow(() => {
 	position: relative;
 	z-index: 10;
 }
-
 .search-box {
 	width: 100%;
 	height: 100rpx;
@@ -775,27 +477,10 @@ onShow(() => {
 	border-radius: $radius-20;
 	@include flex-center;
 }
-
-.search-main {
-	@include flex-center;
-}
-
-.search-icon {
-	width: 36rpx;
-	height: 36rpx;
-	margin-right: $space-8;
-}
-
-.search-text {
-	color: $text-secondary;
-	font-size: $font-28;
-}
-
-.domain {
-	margin-top: $space-32;
-	@include grid-col-2;
-}
-
+.search-main { @include flex-center; }
+.search-icon { width: 36rpx; height: 36rpx; margin-right: $space-8; }
+.search-text { color: $text-secondary; font-size: $font-28; }
+.domain { margin-top: $space-32; @include grid-col-2; }
 .domain-card {
 	position: relative;
 	width: 315rpx;
@@ -807,7 +492,6 @@ onShow(() => {
 	border-radius: $radius-20;
 	box-shadow: $box-shadow;
 }
-
 .hot-sale {
 	width: 64rpx;
 	height: 34rpx;
@@ -817,25 +501,9 @@ onShow(() => {
 	color: #fff;
 	@include flex-center;
 }
-
-.domain-card-top {
-	@include flex-between;
-	color: $text-primary;
-	font-size: $font-26;
-	margin-bottom: $space-8;
-}
-
-.domain-card-title {
-	color: $text-primary;
-	font-size: $font-26;
-	margin-bottom: $space-8;
-}
-
-.domain-card-subTitle {
-	color: $text-secondary;
-	font-size: $font-20;
-}
-
+.domain-card-top { @include flex-between; color: $text-primary; font-size: $font-26; margin-bottom: $space-8; }
+.domain-card-title { color: $text-primary; font-size: $font-26; margin-bottom: $space-8; }
+.domain-card-subTitle { color: $text-secondary; font-size: $font-20; }
 .domain-card-btn {
 	width: 120rpx;
 	height: 52rpx;
@@ -845,15 +513,8 @@ onShow(() => {
 	border-radius: $radius-16;
 	@include flex-center;
 }
-
-.domain-card-btn1 {
-	background: linear-gradient(to right, $danger, $danger-secondary);
-}
-
-.domain-card-btn2 {
-	background: linear-gradient(to right, $primary-light, $primary);
-}
-
+.domain-card-btn1 { background: linear-gradient(to right, $danger, $danger-secondary); }
+.domain-card-btn2 { background: linear-gradient(to right, $primary-light, $primary); }
 .main-box {
 	width: 100%;
 	height: 218rpx;
@@ -866,22 +527,9 @@ onShow(() => {
 	grid-template-columns: repeat(4, 1fr);
 	gap: 48rpx;
 }
-
-.main-card {
-	@include flex-col-center;
-}
-
-.main-pic {
-	width: 98rpx;
-	height: 98rpx;
-}
-
-.main-title {
-	font-size: $font-28;
-	color: $text-primary;
-	margin-top: $space-16;
-}
-
+.main-card { @include flex-col-center; }
+.main-pic { width: 98rpx; height: 98rpx; }
+.main-title { font-size: $font-28; color: $text-primary; margin-top: $space-16; }
 .capsule-box {
 	width: 100%;
 	height: 160rpx;
@@ -889,49 +537,13 @@ onShow(() => {
 	background: url('https://doctor.gzxinxingyiyuan.com/images/image/capsule/item2.png') no-repeat;
 	background-size: 100% 100%;
 }
-
-.capsule-card {
-	color: #fff;
-	position: relative;
-	z-index: 11;
-	@include flex-col-center;
-}
-
-.capsule-card-title {
-	font-size: $font-26;
-	@include flex-col-center;
-}
-
-.capsule-card-desc {
-	margin-top: $space-16;
-	font-size: $font-40;
-	@include flex-col-center;
-}
-
-.appointment-box {
-	height: 40rpx;
-	margin-top: $space-32;
-	font-size: $font-36;
-	color: $text-primary;
-	@include flex-between;
-}
-
-.appointment-box-all {
-	@include flex-start;
-}
-
-.appointment-box-all-text {
-	margin-right: $space-8;
-	font-size: $font-24;
-	color: $text-secondary;
-}
-
-.appointment-box-all-icon {
-	width: 32rpx;
-	height: 32rpx;
-	@include flex-center;
-}
-
+.capsule-card { color: #fff; position: relative; z-index: 11; @include flex-col-center; }
+.capsule-card-title { font-size: $font-26; @include flex-col-center; }
+.capsule-card-desc { margin-top: $space-16; font-size: $font-40; @include flex-col-center; }
+.appointment-box { height: 40rpx; margin-top: $space-32; font-size: $font-36; color: $text-primary; @include flex-between; }
+.appointment-box-all { @include flex-start; }
+.appointment-box-all-text { margin-right: $space-8; font-size: $font-24; color: $text-secondary; }
+.appointment-box-all-icon { width: 32rpx; height: 32rpx; @include flex-center; }
 .appointment-card {
 	width: 100%;
 	height: 202rpx;
@@ -942,130 +554,94 @@ onShow(() => {
 	padding: $space-32;
 	@include flex-between;
 }
-
-.appointment-avator {
-	width: 116rpx;
-	height: 116rpx;
-	margin-right: $space-32;
-	border-radius: 50%;
-	border: 1px solid $primary;
-}
-
-.appointment-content {
-	flex: 1;
-
-	> :nth-child(2) {
-		color: $text-secondary;
-		font-size: $font-24;
-	}
-}
-
-.appointment-content-top {
-	margin-bottom: $space-20;
-	@include flex-between;
-
-	> :nth-child(1) {
-		@include flex-between;
-
-		> :nth-child(1) {
-			color: $text-primary;
-			font-size: $font-32;
-			margin-right: $space-24;
-		}
-
-		> :nth-child(2) {
-			color: $text-regular;
-			font-size: $font-24;
-			margin-right: $space-24;
-		}
-	}
-
-	> :nth-child(2) {
-		color: $text-secondary;
-		font-size: $font-24;
-	}
-}
-
+.appointment-avator { width: 116rpx; height: 116rpx; margin-right: $space-32; border-radius: 50%; overflow: hidden; }
+.appointment-content { flex: 1; }
+.appointment-content-top { @include flex-between; margin-bottom: $space-16; }
+.doctor-box { width: 100%; margin-top: $space-20; }
 .doctor-card {
 	width: 100%;
-	height: 248rpx;
-	border-radius: $radius-20;
 	background-color: #fff;
+	border-radius: $radius-20;
 	box-shadow: $box-shadow;
-	margin-top: $space-20;
+	margin-bottom: $space-20;
 	padding: $space-32;
 	@include flex-start;
+}
 
-	> :nth-child(1) {
-		width: 184rpx;
-		height: 184rpx;
-		border-radius: $radius-20;
-		margin-right: $space-32;
-		position: relative;
+/* ============================================================
+   字幕面板
+   ============================================================ */
+.subtitle-wrap {
+	margin: $space-24 $space-32;
+	border-radius: 16rpx;
+	background-color: rgba(0, 0, 0, 0.85);
+	overflow: hidden;
+}
 
-		> :nth-child(2) {
-			width: 50rpx;
-			height: 56rpx;
-			position: absolute;
-			top: 0;
-			left: 22rpx;
-		}
-	}
+.lang-bar {
+	display: flex;
+	flex-direction: row;
+	padding: 16rpx;
+	gap: 12rpx;
+	border-bottom: 1rpx solid rgba(255, 255, 255, 0.12);
+}
 
-	> :nth-child(2) {
-		flex: 1;
-		position: relative;
+.lang-btn {
+	flex: 1;
+	height: 56rpx;
+	border-radius: 28rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 24rpx;
+	color: rgba(255, 255, 255, 0.6);
+	background-color: rgba(255, 255, 255, 0.08);
+}
 
-		> :nth-child(1) {
-			@include flex-start;
+.lang-btn--active {
+	background-color: #4080ff;
+	color: #ffffff;
+}
 
-			> :nth-child(1) {
-				color: $text-primary;
-				font-size: $font-32;
-				margin-right: $space-24;
-			}
+.subtitle-scroll {
+	height: 320rpx;
+	padding: 16rpx 20rpx;
+}
 
-			> :nth-child(2) {
-				color: $text-regular;
-				font-size: $font-24;
-			}
-		}
+.subtitle-row {
+	display: flex;
+	flex-direction: row;
+	align-items: flex-start;
+	margin-bottom: 16rpx;
+}
 
-		> :nth-child(2) {
-			margin-top: $space-20;
-			color: $text-secondary;
-			font-size: $font-24;
-		}
+.subtitle-row--interim {
+	opacity: 0.65;
+}
 
-		> :nth-child(3) {
-			width: fit-content;
-			margin-top: $space-20;
-			color: $primary;
-			font-size: $font-24;
-			padding: $space-8 $space-16;
-			border: 1px solid $primary;
-			border-radius: $radius-20;
-		}
+.speaker-tag {
+	font-size: 20rpx;
+	padding: 2rpx 10rpx;
+	border-radius: 8rpx;
+	margin-right: 12rpx;
+	flex-shrink: 0;
+	margin-top: 4rpx;
+}
 
-		> :nth-child(4) {
-			@include flex-start-baseline;
-			position: absolute;
-			bottom: 0;
-			right: 0;
-			color: $primary;
-			font-size: $font-24;
+.speaker-doctor {
+	background-color: rgba(64, 128, 255, 0.3);
+	color: #a8c8ff;
+}
 
-			> :nth-child(1) {
-				margin-right: $space-8;
-				font-size: $font-28;
-				color: $danger;
-			}
+.speaker-patient {
+	background-color: rgba(82, 196, 26, 0.2);
+	color: #b7eb8f;
+}
 
-			> :nth-child(2) {
-				font-size: $font-20;
-				color: $text-regular;
-			}
-		}
-	}
+.subtitle-text {
+	flex: 1;
+	font-size: 28rpx;
+	color: #ffffff;
+	line-height: 1.5;
 }
 </style>
