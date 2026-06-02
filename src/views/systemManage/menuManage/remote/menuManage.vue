@@ -941,6 +941,8 @@ const startConsultation = async () => {
 const handleCallBegin = async (params) => {
   if (!params) return;
   roomId.value = params.roomID;
+  if (params.callId) callId.value = params.callId;
+
   try {
     const res = await startRecording({
       roomId: roomId.value,
@@ -950,20 +952,24 @@ const handleCallBegin = async (params) => {
     });
     if (res?.data?.recordId) recordId.value = res.data.recordId;
 
-    // 解析字幕 WebSocket 地址，并启动字幕订阅
+    // 解析字幕 WebSocket host（audioWsUrl 示例：ws://192.168.100.14:8089/ws/audio/）
     if (res?.data?.audioWsUrl) {
-      // audioWsUrl 格式：ws://host:port/ws/audio/，提取 ws://host:port 部分
       const match = res.data.audioWsUrl.match(/^(wss?:\/\/[^/]+)/);
       subtitleWsHost.value = match ? match[1] : '';
     }
     subtitleRoomId.value = roomId.value;
     subtitleUserId.value = sessionStorage.getItem('username') || callerUserID.value;
+
+    console.log('[v0] 字幕连接参数:', {
+      wsHost: subtitleWsHost.value,
+      roomId: subtitleRoomId.value,
+      userId: subtitleUserId.value,
+    });
   } catch (error) {
     console.error('调用startRecording失败:', error);
   }
-  if (params.callId) callId.value = params.callId;
 
-  // 启动倒计时 & 字幕面板
+  // 所有字幕参数就绪后，再激活倒计时 & 字幕面板
   callActive.value = true;
 };
 
@@ -1022,7 +1028,7 @@ onUnmounted(() => {
       engine.off('onCallEnd', handleCallEnd);
     }
   } catch (error) {
-    console.error('移除事件监听失败:', error);
+    console.error('��除事件监听失败:', error);
   }
 });
 // -----------------------------------------------
@@ -1494,7 +1500,7 @@ const submitImgPrescription = () => {
   wpImgConfirmSignVisible.value = true;
 };
 /**
- * 图片上传处方 - 第一步确认：截图 → 上传到处方接口（prescripfile） → 成功后弹第二步
+ * 图片上传处方 - 第一步确认：截图 �� 上传到处方接口（prescripfile） → 成功后弹第二步
  */
 const handleWpImgPrescriptionStep1Ok = async () => {
   wpImgPrescriptionUploading.value = true;

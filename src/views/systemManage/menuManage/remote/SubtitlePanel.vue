@@ -139,13 +139,22 @@ const scrollToBottom = async () => {
 
 // ——— WebSocket 字幕连接 ———
 const connectSubtitleWs = () => {
-  if (!props.wsHost || !props.roomId || !props.userId) return;
+  if (!props.wsHost || !props.roomId || !props.userId) {
+    console.log('[v0] SubtitlePanel: 参数不足，跳过连接', {
+      wsHost: props.wsHost,
+      roomId: props.roomId,
+      userId: props.userId,
+    });
+    return;
+  }
   const url = `${props.wsHost}/ws/subtitle/${props.roomId}/${props.userId}`;
+  console.log('[v0] SubtitlePanel: 连接字幕WS', url);
   wsStatus.value = 'connecting';
 
   subtitleWs = new WebSocket(url);
 
   subtitleWs.onopen = () => {
+    console.log('[v0] SubtitlePanel: WebSocket已连接');
     wsStatus.value = 'connected';
   };
 
@@ -174,11 +183,13 @@ const connectSubtitleWs = () => {
     }
   };
 
-  subtitleWs.onclose = () => {
+  subtitleWs.onclose = (e) => {
+    console.log('[v0] SubtitlePanel: WebSocket已关闭', e.code, e.reason);
     wsStatus.value = 'disconnected';
   };
 
-  subtitleWs.onerror = () => {
+  subtitleWs.onerror = (e) => {
+    console.error('[v0] SubtitlePanel: WebSocket连接错误', e);
     wsStatus.value = 'disconnected';
   };
 };
@@ -197,19 +208,29 @@ const clearSubtitles = () => {
   currentLine.value = null;
 };
 
-// ——— 监听 active ———
+// ——— 监听 active + 连接参数 ———
+// active 变 false 时立即断开
 watch(
   () => props.active,
   (val) => {
-    if (val) {
-      clearSubtitles();
-      connectSubtitleWs();
-    } else {
+    if (!val) {
       disconnectSubtitleWs();
       clearSubtitles();
     }
-  },
-  { immediate: true }
+  }
+);
+
+// 只要 active=true 且三个参数全部就绪，就（重新）连接
+watch(
+  () => [props.active, props.wsHost, props.roomId, props.userId],
+  ([active, wsHost, roomId, userId]) => {
+    if (active && wsHost && roomId && userId) {
+      // 如果已有旧连接先断开
+      disconnectSubtitleWs();
+      clearSubtitles();
+      connectSubtitleWs();
+    }
+  }
 );
 
 onUnmounted(() => {
