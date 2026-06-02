@@ -39,12 +39,12 @@
         :class="{ 'subtitle-doctor': item.speakerRole === 'doctor', 'subtitle-user': item.speakerRole === 'user' }"
       >
         <span class="speaker-tag">{{ item.speakerRole === 'doctor' ? '医生' : '患者' }}</span>
-        <span class="subtitle-text">{{ getDisplayText(item) }}</span>
+        <span class="subtitle-text">{{ item.displayText }}</span>
       </div>
       <!-- 当前正在识别的行（中间结果） -->
       <div v-if="currentLine" class="subtitle-item subtitle-current">
         <span class="speaker-tag">{{ currentLine.speakerRole === 'doctor' ? '医生' : '患者' }}</span>
-        <span class="subtitle-text">{{ getDisplayText(currentLine) }}<span class="cursor-blink">|</span></span>
+        <span class="subtitle-text">{{ currentLine.displayText }}<span class="cursor-blink">|</span></span>
       </div>
       <!-- 无内容时提示 -->
       <div v-if="!subtitleList.length && !currentLine" class="subtitle-empty">
@@ -80,13 +80,13 @@ const props = defineProps({
   },
 });
 
-// ——— 语言选项 ———
+// ——— 语言选项（value 对应后端 outputFormat 参数） ———
 const langOptions = [
-  { label: '简体中文', value: 'zh-CN-simple' },
-  { label: '繁體中文', value: 'zh-CN-traditional' },
-  { label: 'English', value: 'en' },
+  { label: '简体中文', value: 'simplified' },
+  { label: '繁體中文', value: 'traditional' },
+  { label: 'English', value: 'none' },
 ];
-const currentLang = ref('zh-CN-simple');
+const currentLang = ref('simplified');
 
 // ——— 字幕列表 ———
 /** 已确定的字幕列表（isFinal=true） */
@@ -104,29 +104,15 @@ const statusText = computed(() => {
   return map[wsStatus.value] || '未连接';
 });
 
-/**
- * 根据当前语言选项，返回要展示的字幕文本。
- * - originalText: 原始识别文本（粤语/普通话）
- * - convertedText: 简繁转换后文本（后端已处理）
- * 英文字幕无后端直接支持，此处降级展示 originalText 并标注 [EN]
- */
-const getDisplayText = (item) => {
-  if (!item) return '';
-  if (currentLang.value === 'zh-CN-simple') {
-    return item.convertedText || item.originalText || '';
-  }
-  if (currentLang.value === 'zh-CN-traditional') {
-    // 后端针对医生(粤语)已转简体，患者(普通话)已转繁体；
-    // 这里统一展示 originalText 作为繁体（或 convertedText）
-    return item.originalText || item.convertedText || '';
-  }
-  // English: 降级展示原文，并加 [EN] 标记（可替换为翻译接口）
-  return item.originalText ? `[EN] ${item.originalText}` : '';
-};
-
-// ——— 语言切换 ———
-const switchLang = async (lang) => {
+// ——— 语言切换：断开旧连接、用新 outputFormat 重连，清空字幕列表 ———
+const switchLang = (lang) => {
+  if (currentLang.value === lang) return;
   currentLang.value = lang;
+  if (props.active && props.wsHost && props.roomId && props.userId) {
+    disconnectSubtitleWs();
+    clearSubtitles();
+    connectSubtitleWs();
+  }
 };
 
 // ——— 自动滚动到底部 ———
@@ -140,7 +126,8 @@ const scrollToBottom = async () => {
 // ——— WebSocket 字幕连接 ———
 const connectSubtitleWs = () => {
   if (!props.wsHost || !props.roomId || !props.userId) return;
-  const url = `${props.wsHost}/ws/subtitle/${props.roomId}/${props.userId}`;
+  // outputFormat 参数告诉后端本次连接需要哪种文本转换
+  const url = `${props.wsHost}/ws/subtitle/${props.roomId}/${props.userId}?outputFormat=${currentLang.value}`;
   wsStatus.value = 'connecting';
 
   subtitleWs = new WebSocket(url);
@@ -152,23 +139,21 @@ const connectSubtitleWs = () => {
   subtitleWs.onmessage = (event) => {
     try {
       const subtitle = JSON.parse(event.data);
-      if (subtitle.type === 'text') {
-        if (subtitle.isFinal) {
-          // 最终结果：追加到字幕列表，清空当前行
-          subtitleList.value.push({ ...subtitle });
-          currentLine.value = null;
-          // 超过 100 条时截断，避免内存溢出
-          if (subtitleList.value.length > 100) {
-            subtitleList.value = subtitleList.value.slice(-80);
-          }
-        } else {
-          // 中间结果：更新当前行
-          currentLine.value = { ...subtitle };
+      if (subtitle.type !== 'text') return;
+      // 统一展示 convertedText（后端已按当前 outputFormat 转换），
+      // 若为空（outputFormat=none 时 convertedText 可能与 originalText 相同）则降级用 originalText
+      const displayText = subtitle.convertedText || subtitle.originalText || '';
+      const item = { ...subtitle, displayText };
+      if (subtitle.isFinal) {
+        subtitleList.value.push(item);
+        currentLine.value = null;
+        if (subtitleList.value.length > 100) {
+          subtitleList.value = subtitleList.value.slice(-80);
         }
-        scrollToBottom();
-      } else if (subtitle.type === 'control') {
-        // 控制消息，忽略或做特殊处理
+      } else {
+        currentLine.value = item;
       }
+      scrollToBottom();
     } catch (e) {
       // 非 JSON 消息忽略
     }
