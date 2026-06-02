@@ -172,44 +172,83 @@ const langOptions = [
 // 原生浮层（通话中用，覆盖在 TUICallKit 原生层上方）
 // ============================================================
 
-/** 创建字幕原生浮层 */
+/**
+ * 获取 TUICallKit 通话所在的原生 window。
+ * TUICallKit 插件通话时会打开一个新的原生 WebviewObject，
+ * 通过遍历所有 webview 找到 id 包含 "TUICallKit" 的那个。
+ */
+const getCallWindow = () => {
+	// #ifdef APP-PLUS
+	try {
+		const wins = plus.webview.all();
+		for (let i = wins.length - 1; i >= 0; i--) {
+			const id = wins[i].id || '';
+			console.log('[v0] webview id:', id);
+			if (id.toLowerCase().includes('tuicall') || id.toLowerCase().includes('call')) {
+				return wins[i];
+			}
+		}
+		// 找不到时取最顶层 webview（通话时它一定是最新打开的）
+		return wins[wins.length - 1] || plus.webview.currentWebview();
+	} catch (e) {
+		return plus.webview.currentWebview();
+	}
+	// #endif
+};
+
+/** 创建字幕原生浮层，挂载到通话窗口 */
 const showNativeSubtitle = () => {
 	// #ifdef APP-PLUS
 	try {
-		// 字幕文字区域：屏幕下方约 55% 处
-		nativeSubtitleView = new plus.nativeObj.View('subtitleView', {
-			top: '55%',
-			left: '5%',
-			width: '90%',
-			height: '160px',
-			backgroundColor: 'rgba(0,0,0,0)',
-		});
-		nativeSubtitleView.show();
+		// 延迟 800ms 等待通话窗口完全打开
+		setTimeout(() => {
+			try {
+				const callWin = getCallWindow();
+				console.log('[v0] 目标通话窗口:', callWin ? callWin.id : 'null');
 
-		// 语言切换按钮区域：字幕上方
-		nativeLangView = new plus.nativeObj.View('langSwitchView', {
-			top: '51%',
-			left: '5%',
-			width: '90%',
-			height: '40px',
-			backgroundColor: 'rgba(0,0,0,0)',
-		});
-		nativeLangView.show();
-		updateNativeLangBar();
-		updateNativeSubtitle();
+				// 语言切换按钮区域
+				nativeLangView = new plus.nativeObj.View('langSwitchView', {
+					top: '51%',
+					left: '5%',
+					width: '90%',
+					height: '40px',
+					backgroundColor: 'rgba(0,0,0,0.01)',
+				});
 
-		// 点击语言切换按钮（按钮宽度约 1/3）
-		nativeLangView.addEventListener('click', (e) => {
-			const x = e.screenX || 0;
-			const screenWidth = plus.screen.resolutionWidth;
-			const sectionWidth = screenWidth * 0.9 / 3;
-			const offsetX = x - screenWidth * 0.05;
-			const idx = Math.floor(offsetX / sectionWidth);
-			const lang = langOptions[Math.max(0, Math.min(2, idx))];
-			if (lang) onSwitchLang(lang.value);
-		});
+				// 字幕文字区域
+				nativeSubtitleView = new plus.nativeObj.View('subtitleView', {
+					top: '56%',
+					left: '5%',
+					width: '90%',
+					height: '160px',
+					backgroundColor: 'rgba(0,0,0,0.01)',
+				});
+
+				// 挂载到通话窗口（不指定 parent 时默认挂到 currentWebview，通话是另一个 window 所以需要显式挂载）
+				nativeLangView.show(callWin);
+				nativeSubtitleView.show(callWin);
+
+				updateNativeLangBar();
+				updateNativeSubtitle();
+
+				// 点击语言切换按钮
+				nativeLangView.addEventListener('click', (e) => {
+					const x = e.screenX || 0;
+					const screenWidth = plus.screen.resolutionWidth;
+					const sectionWidth = (screenWidth * 0.9) / 3;
+					const offsetX = x - screenWidth * 0.05;
+					const idx = Math.max(0, Math.min(2, Math.floor(offsetX / sectionWidth)));
+					const lang = langOptions[idx];
+					if (lang) onSwitchLang(lang.value);
+				});
+
+				console.log('[v0] 原生字幕浮层已创建');
+			} catch (inner) {
+				console.error('[v0] showNativeSubtitle 内层失败:', inner);
+			}
+		}, 800);
 	} catch (e) {
-		console.error('[Subtitle] showNativeSubtitle 失败:', e);
+		console.error('[v0] showNativeSubtitle 外层失败:', e);
 	}
 	// #endif
 };
@@ -248,26 +287,36 @@ const updateNativeLangBar = () => {
 	try {
 		const drawCmds = langOptions.map((lang, idx) => {
 			const isActive = currentLang.value === lang.value;
-			const btnWidth = Math.floor(100 / 3);
-			const x = idx * btnWidth + '%';
+			// 每个按钮宽度约 33%，留 1% 间距
+			const btnW = 32;
+			const left = idx * 33 + '%';
 			return [
 				{
 					tag: 'rect',
-					color: isActive ? '#4080ff' : 'rgba(0,0,0,0.4)',
-					rectStyles: { borderColor: isActive ? '#4080ff' : 'rgba(255,255,255,0.3)', borderWidth: '1px', borderRadius: '16px' },
-					position: { top: '4px', left: x, width: btnWidth - 1 + '%', height: '32px' },
+					color: isActive ? '#4080ff' : 'rgba(0,0,0,0.5)',
+					rectStyles: {
+						borderColor: isActive ? '#4080ff' : 'rgba(255,255,255,0.4)',
+						borderWidth: '1px',
+						borderRadius: '14px',
+					},
+					position: { top: '2px', left, width: btnW + '%', height: '36px' },
 				},
 				{
 					tag: 'font',
 					text: lang.label,
-					textStyles: { size: '12px', color: isActive ? '#ffffff' : 'rgba(255,255,255,0.7)', align: 'center', verticalAlign: 'middle' },
-					position: { top: '4px', left: x, width: btnWidth - 1 + '%', height: '32px' },
+					textStyles: {
+						size: '11px',
+						color: '#ffffff',
+						align: 'center',
+						verticalAlign: 'middle',
+					},
+					position: { top: '2px', left, width: btnW + '%', height: '36px' },
 				},
 			];
 		}).flat();
 		nativeLangView.draw(drawCmds);
 	} catch (e) {
-		console.error('[Subtitle] updateNativeLangBar 失败:', e);
+		console.error('[v0] updateNativeLangBar 失败:', e);
 	}
 	// #endif
 };
@@ -355,7 +404,7 @@ try {
 	console.log('TUICallKit:', TUICallKit);
 
 	if (!TUICallKit) {
-		throw new Error('插件未加载成功');
+		throw new Error('插件��加载成功');
 	}
 
 	const userID = uni.getStorageSync('phone');
@@ -415,20 +464,29 @@ try {
 				const wsHost = resolveSubtitleWsHost(apiBaseUrl);
 
 				// 连接字幕 WS（患者仅接收，不采集音频）
+				console.log('[v0] 字幕WS参数:', { wsHost, roomId, userId });
 				try {
 					const { socketTask, close } = connectSubtitleWs(wsHost, roomId, userId);
 					subtitleWsClose = close;
 
-					socketTask.onOpen(() => {});
+					socketTask.onOpen(() => {
+						console.log('[v0] 字幕WS已连接');
+					});
 					socketTask.onMessage((res) => {
 						try {
 							const subtitle = JSON.parse(res.data);
 							handleSubtitleMessage(subtitle);
 						} catch (e) {}
 					});
-					socketTask.onClose(() => {});
-					socketTask.onError(() => {});
-				} catch (e) {}
+					socketTask.onClose((res) => {
+						console.log('[v0] 字幕WS已关闭', res);
+					});
+					socketTask.onError((err) => {
+						console.error('[v0] 字幕WS错误:', err);
+					});
+				} catch (e) {
+					console.error('[v0] connectSubtitleWs 异常:', e);
+				}
 
 				// 创建原生字幕浮层（覆盖在 TUICallKit 上方）
 				showNativeSubtitle();
