@@ -113,7 +113,7 @@
 			</view>
 		</view>
 
-		<!-- 字幕弹窗：视频最小化后可见，固定在底部 -->
+		<!-- 字幕弹窗：通话时显示，视频最小化后可见，固定在底部 -->
 		<view v-if="subtitleVisible" class="subtitle-popup">
 			<view class="subtitle-header">
 				<text class="subtitle-title">实时字幕</text>
@@ -174,16 +174,13 @@ const langOptions = [
 
 const getDisplayText = (item) => {
 	if (!item) return '';
-	// simplified 显示转换后文本，其余显示原文
 	return currentLang.value === 'simplified'
 		? (item.convertedText || item.originalText || '')
 		: (item.originalText || item.convertedText || '');
 };
 
 const scrollToBottom = () => {
-	nextTick(() => {
-		subtitleScrollTop.value = subtitleList.value.length * 9999;
-	});
+	nextTick(() => { subtitleScrollTop.value = subtitleList.value.length * 9999; });
 };
 
 const handleSubtitleMessage = (subtitle) => {
@@ -191,108 +188,22 @@ const handleSubtitleMessage = (subtitle) => {
 	if (subtitle.isFinal) {
 		subtitleList.value.push(subtitle);
 		currentSubtitleLine.value = null;
-		if (subtitleList.value.length > 100) {
-			subtitleList.value = subtitleList.value.slice(-80);
-		}
+		if (subtitleList.value.length > 100) subtitleList.value = subtitleList.value.slice(-80);
 	} else {
 		currentSubtitleLine.value = subtitle;
 	}
 	scrollToBottom();
 };
 
-// ── TUICallKit 事件监听器 ──────────────────────────────────────
-// 用 function 声明（而非 const）确保函数提升，在 login.success 回调中可正常访问
-// #ifdef APP-PLUS
-function setupTUICallKitListeners() {
-	try {
-		console.log('[v0] 开始注册 TUICallKit 监听器');
-
-		uni.$TUICallKit.on('onInvited', (data) => {
-			console.log('[v0] 收到来电邀请:', JSON.stringify(data));
-		});
-
-		uni.$TUICallKit.on('onCallBegin', (data) => {
-			console.log('[v0] 通话开始 data:', JSON.stringify(data));
-
-			// UniApp TUICallKit 插件回调字段为 roomID（大写 D）
-			const roomId = String(data.roomID || data.roomId || data.roomIDStr || '');
-			// userId 与 Web 端 startRecording 传的保持一致：手机号去掉特殊字符
-			const rawPhone = uni.getStorageSync('phone') || '';
-			const userId = rawPhone.replace(/[^a-zA-Z0-9_-]/g, '');
-
-			console.log('[v0] roomId:', roomId, 'userId:', userId);
-
-			if (!roomId || !userId) {
-				console.log('[v0] roomId 或 userId 为空，跳过字幕连接');
-				return;
-			}
-
-			// 重置字幕状态
-			subtitleList.value = [];
-			currentSubtitleLine.value = null;
-			currentLang.value = 'simplified';
-			subtitleVisible.value = true;
-
-			// 推导字幕 WS host（与 Web 端 VITE_API_URL 同一机器，端口 8089）
-			// yyf.js 里的生产 API host 是 hqgy.gzxinxingyiyuan.com
-			const apiBaseUrl = uni.getStorageSync('apiBaseUrl') || 'https://hqgy.gzxinxingyiyuan.com/api';
-			const wsHost = resolveSubtitleWsHost(apiBaseUrl);
-			const wsUrl = `${wsHost}/ws/subtitle/${roomId}/${userId}`;
-			console.log('[v0] 字幕WS连接:', wsUrl);
-
-			try {
-				const { socketTask, close } = connectSubtitleWs(wsHost, roomId, userId);
-				subtitleWsClose = close;
-				socketTask.onOpen(() => {
-					console.log('[v0] 字幕WS已连接');
-				});
-				socketTask.onMessage((res) => {
-					try { handleSubtitleMessage(JSON.parse(res.data)); } catch (e) {}
-				});
-				socketTask.onClose((res) => {
-					console.log('[v0] 字幕WS关闭 code:', res && res.code);
-				});
-				socketTask.onError((err) => {
-					console.error('[v0] 字幕WS错误:', JSON.stringify(err));
-				});
-			} catch (e) {
-				console.error('[v0] connectSubtitleWs 异常:', e);
-			}
-		});
-
-		uni.$TUICallKit.on('onCallEnd', (data) => {
-			console.log('[v0] 通话结束:', JSON.stringify(data));
-			if (subtitleWsClose) {
-				subtitleWsClose();
-				subtitleWsClose = null;
-			}
-			setTimeout(() => {
-				subtitleVisible.value = false;
-				subtitleList.value = [];
-				currentSubtitleLine.value = null;
-			}, 3000);
-		});
-
-		uni.$TUICallKit.on('onError', (err) => {
-			console.error('[v0] TUICallKit error:', JSON.stringify(err));
-		});
-
-		console.log('[v0] TUICallKit 监听器注册完成');
-	} catch (e) {
-		console.error('[v0] setupTUICallKitListeners 失败:', e);
-	}
-}
-// #endif
-
-// ── TUICallKit 初始化 ─────────────────────────────────────────
+// ── TUICallKit 初始化（仅 APP-PLUS）────────────────────────────
+// 注意：整个块只有一个 #ifdef，内部不嵌套条件编译
+// setupTUICallKitListeners 必须在 login 调用前定义，避免 TDZ 问题
 // #ifdef APP-PLUS
 try {
 	const TUICallKit = uni.requireNativePlugin('TencentCloud-TUICallKit');
 	console.log('TUICallKit:', TUICallKit);
 
-	if (!TUICallKit) {
-		throw new Error('插件未加载成功');
-	}
+	if (!TUICallKit) throw new Error('插件未加载');
 
 	const userID = uni.getStorageSync('phone');
 	const validUserID = String(userID).replace(/[^a-zA-Z0-9_-]/g, '');
@@ -302,16 +213,90 @@ try {
 
 	uni.$TUICallKit = TUICallKit;
 
+	// ── 先定义监听器函数，再调 login ───────────────────────────
+	// 使用普通函数表达式并赋给 var（var 有变量提升，避免 TDZ）
+	var setupTUICallKitListeners = function () {
+		try {
+			console.log('[v0] 注册 TUICallKit 监听器');
+
+			uni.$TUICallKit.on('onInvited', function (data) {
+				console.log('[v0] 收到来电:', JSON.stringify(data));
+			});
+
+			uni.$TUICallKit.on('onCallBegin', function (data) {
+				console.log('[v0] 通话开始:', JSON.stringify(data));
+
+				var roomId = String(data.roomID || data.roomId || data.roomIDStr || '');
+				var rawPhone = uni.getStorageSync('phone') || '';
+				var userId = rawPhone.replace(/[^a-zA-Z0-9_-]/g, '');
+
+				console.log('[v0] roomId=' + roomId + ' userId=' + userId);
+
+				if (!roomId || !userId) return;
+
+				subtitleList.value = [];
+				currentSubtitleLine.value = null;
+				currentLang.value = 'simplified';
+				subtitleVisible.value = true;
+
+				// 字幕 WS host：与 API 同机器，端口 8089
+				var apiBaseUrl = uni.getStorageSync('apiBaseUrl') || 'https://hqgy.gzxinxingyiyuan.com/api';
+				var wsHost = resolveSubtitleWsHost(apiBaseUrl);
+				console.log('[v0] 字幕WS:', wsHost + '/ws/subtitle/' + roomId + '/' + userId);
+
+				try {
+					var ws = connectSubtitleWs(wsHost, roomId, userId);
+					subtitleWsClose = ws.close;
+					ws.socketTask.onOpen(function () {
+						console.log('[v0] 字幕WS已连接');
+					});
+					ws.socketTask.onMessage(function (res) {
+						try { handleSubtitleMessage(JSON.parse(res.data)); } catch (e) {}
+					});
+					ws.socketTask.onClose(function (res) {
+						console.log('[v0] 字幕WS关闭 code=' + (res && res.code));
+					});
+					ws.socketTask.onError(function (err) {
+						console.error('[v0] 字幕WS错误:', JSON.stringify(err));
+					});
+				} catch (e) {
+					console.error('[v0] connectSubtitleWs 异常:', e);
+				}
+			});
+
+			uni.$TUICallKit.on('onCallEnd', function (data) {
+				console.log('[v0] 通话结束:', JSON.stringify(data));
+				if (subtitleWsClose) {
+					subtitleWsClose();
+					subtitleWsClose = null;
+				}
+				setTimeout(function () {
+					subtitleVisible.value = false;
+					subtitleList.value = [];
+					currentSubtitleLine.value = null;
+				}, 3000);
+			});
+
+			uni.$TUICallKit.on('onError', function (err) {
+				console.error('[v0] TUICallKit error:', JSON.stringify(err));
+			});
+
+			console.log('[v0] TUICallKit 监听器注册完成');
+		} catch (e) {
+			console.error('[v0] setupTUICallKitListeners 失败:', e);
+		}
+	};
+
+	// ── 监听器定义完毕，再调 login ──────────────────────────────
 	uni.$TUICallKit.login({
 		SDKAppID: sdkAppID,
 		userID: validUserID,
 		userSig,
-		success: (res) => {
+		success: function (res) {
 			console.log('TUICallKit 登录成功:', res);
-			// setupTUICallKitListeners 是 function 声明，此处可正常访问
 			setupTUICallKitListeners();
 		},
-		fail: (err) => {
+		fail: function (err) {
 			console.error('TUICallKit 登录失败:', err);
 			uni.showToast({ title: '通话服务登录失败', icon: 'none' });
 		}
@@ -320,8 +305,8 @@ try {
 	uni.$TUICallKit.setSelfInfo({
 		nickName: uni.getStorageSync('userName') || '患者',
 		avatar: '',
-		success: (res) => { console.log('setSelfInfo 成功:', res); },
-		fail: (err) => { console.error('setSelfInfo 失败:', err); }
+		success: function (res) { console.log('setSelfInfo 成功:', res); },
+		fail: function (err) { console.error('setSelfInfo 失败:', err); }
 	});
 } catch (err) {
 	console.error('TUICallKit 初始化失败:', err);
@@ -335,14 +320,10 @@ const swiperList = reactive([
 	{ id: 2, name: 'swiper2', url: 'https://doctor.gzxinxingyiyuan.com/images/image/swiper/item3.png', path: '/pages/home/list/domainShop' }
 ]);
 
-const handleClickSwiper = (v) => {
-	v && uni.navigateTo({ url: v });
-};
+const handleClickSwiper = (v) => { v && uni.navigateTo({ url: v }); };
 
-// ── 搜索 ─────────────────────────────────────────────────────
-const handleClickSearch = () => {
-	uni.navigateTo({ url: '/pages/home/list/search' });
-};
+// ── 搜索 ──────────────────────────────────────────────────────
+const handleClickSearch = () => { uni.navigateTo({ url: '/pages/home/list/search' }); };
 
 // ── 功能区 ────────────────────────────────────────────────────
 const domainList = reactive([
@@ -531,16 +512,8 @@ onShow(() => {
 	padding: 16rpx 24rpx;
 	border-bottom: 1rpx solid rgba(255, 255, 255, 0.15);
 }
-.subtitle-title {
-	color: #ffffff;
-	font-size: 26rpx;
-	font-weight: 600;
-}
-.lang-bar {
-	display: flex;
-	flex-direction: row;
-	gap: 12rpx;
-}
+.subtitle-title { color: #ffffff; font-size: 26rpx; font-weight: 600; }
+.lang-bar { display: flex; flex-direction: row; gap: 12rpx; }
 .lang-btn {
 	padding: 8rpx 18rpx;
 	border-radius: 30rpx;
@@ -548,51 +521,25 @@ onShow(() => {
 	color: rgba(255, 255, 255, 0.6);
 	border: 1rpx solid rgba(255, 255, 255, 0.25);
 }
-.lang-btn--active {
-	color: #ffffff;
-	background-color: #4080ff;
-	border-color: #4080ff;
-}
-.subtitle-scroll {
-	height: 260rpx;
-	padding: 16rpx 24rpx;
-}
+.lang-btn--active { color: #ffffff; background-color: #4080ff; border-color: #4080ff; }
+.subtitle-scroll { height: 240rpx; padding: 16rpx 24rpx; }
 .subtitle-row {
 	display: flex;
 	flex-direction: row;
 	align-items: flex-start;
 	margin-bottom: 16rpx;
 }
-.subtitle-row--interim {
-	opacity: 0.65;
-}
+.subtitle-row--interim { opacity: 0.7; }
 .speaker-tag {
-	font-size: 22rpx;
-	padding: 4rpx 12rpx;
-	border-radius: 20rpx;
+	font-size: 20rpx;
+	border-radius: 6rpx;
+	padding: 2rpx 10rpx;
 	margin-right: 12rpx;
+	margin-top: 4rpx;
 	flex-shrink: 0;
 }
-.speaker-doctor {
-	background-color: rgba(64, 128, 255, 0.35);
-	color: #7eb3ff;
-}
-.speaker-patient {
-	background-color: rgba(40, 180, 100, 0.35);
-	color: #7ddba8;
-}
-.subtitle-text {
-	color: #ffffff;
-	font-size: 28rpx;
-	line-height: 1.5;
-	flex: 1;
-}
-.subtitle-empty {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	height: 200rpx;
-	color: rgba(255, 255, 255, 0.4);
-	font-size: 26rpx;
-}
+.speaker-doctor { background-color: rgba(64, 128, 255, 0.3); color: #80aaff; }
+.speaker-patient { background-color: rgba(82, 196, 26, 0.3); color: #95de64; }
+.subtitle-text { color: #ffffff; font-size: 26rpx; line-height: 1.5; flex: 1; }
+.subtitle-empty { text-align: center; color: rgba(255, 255, 255, 0.4); font-size: 24rpx; padding: 40rpx 0; }
 </style>
