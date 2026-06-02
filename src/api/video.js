@@ -26,32 +26,6 @@ export const stopRecording = (recordId) => {
   });
 };
 
-/**
- * 启动语音识别（单路）
- * @param {Object} data
- * @param {string} data.roomId
- * @param {string} data.userId         - 说话人ID，医生需加 doctor_ 前缀
- * @param {string} [data.language]     - 识别语言：zh-CN | yue-CN | en
- * @param {string} [data.targetUserId] - 字幕接收方ID
- * @param {string} [data.outputFormat] - 转换格式：simplified | traditional | none
- */
-export function startSpeech(data) {
-  return request({
-    url: '/speech/start',
-    method: 'post',
-    data,
-  });
-}
 
-/**
- * 停止语音识别
- * @param {string} taskId
- */
-export function stopSpeech(taskId) {
-  return request({
-    url: `/speech/stop/${taskId}`,
-    method: 'post',
-  });
-}
 
 

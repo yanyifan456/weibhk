@@ -168,14 +168,17 @@ let subtitleWsClose = null;
 const langOptions = [
 	{ label: '简体中文', value: 'simplified' },
 	{ label: '繁體中文', value: 'traditional' },
-	{ label: 'English',  value: 'none' },
+	{ label: 'English',  value: 'en' },
 ];
 
+/**
+ * APP 端不控制 outputFormat，后端已按 patientOutputFormat 转换好 convertedText。
+ * 前端统一显示 convertedText，originalText 作为降级。
+ * 语言切换按钮仅为 UI 展示，不触发后端重连。
+ */
 const getDisplayText = (item) => {
 	if (!item) return '';
-	return currentLang.value === 'simplified'
-		? (item.convertedText || item.originalText || '')
-		: (item.originalText || item.convertedText || '');
+	return item.convertedText || item.originalText || '';
 };
 
 const scrollToBottom = () => {
@@ -208,8 +211,9 @@ onLoad(function () {
 		console.log('[v0] onCallBegin:', JSON.stringify(data));
 
 		var roomId = String(data.roomID || data.roomId || data.roomIDStr || '');
-		var rawPhone = uni.getStorageSync('phone') || '';
-		var userId = rawPhone.replace(/[^a-zA-Z0-9_-]/g, '');
+		// userId 必须与 Web 端 startRecording 传的 userId（手机号）完全一致
+		// 后端字幕路由依赖此字段精确匹配推送目标
+		var userId = String(uni.getStorageSync('phone') || '');
 
 		console.log('[v0] roomId=' + roomId + ' userId=' + userId);
 		if (!roomId || !userId) return;
@@ -358,7 +362,7 @@ const clickMainList = (val) => {
 // ── 胶囊区 ────────────────────────────────────────────────────
 const swiperList1 = ref([
 	{ title: '全面防癌基因檢查', desc: '為你摯愛買個最先進的防癌計劃' },
-	{ title: '馴化NK療法', desc: '增強免疫力，提升身體防禦機制' },
+	{ title: '馴化NK療法', desc: '增強免��力，提升身體防禦機制' },
 	{ title: '糖尿病最新療法', desc: '前沿技術，改善糖尿病治療效果' },
 	{ title: '肝硬化及脂肪肝療法', desc: '最新方案，幫助肝臟健康修復' },
 	{ title: '玻璃肺結節清除療法', desc: '無創傷技術，輕鬆解決肺結節問題' },

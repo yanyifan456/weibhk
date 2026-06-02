@@ -84,17 +84,17 @@ const props = defineProps({
    */
   outputFormat: {
     type: String,
-    default: 'traditional',
+    default: 'traditional', // 默认场景：香港医生(粤语)看内地患者(普通话)字幕 → 繁体
   },
 });
 
 const emit = defineEmits(['switch-lang']);
 
-// ——— 语言选项（value 对应后端 outputFormat 参数） ———
+// ——— 语言选项（value 对应后端 doctorOutputFormat 枚举） ———
 const langOptions = [
   { label: '简体中文', value: 'simplified' },
   { label: '繁體中文', value: 'traditional' },
-  { label: 'English', value: 'none' },
+  { label: 'English',  value: 'en' },
 ];
 
 // ——— 字幕列表 ———

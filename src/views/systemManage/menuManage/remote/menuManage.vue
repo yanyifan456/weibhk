@@ -736,7 +736,7 @@ import {
   getfirstpreDetail,
   selectUserDetail
 } from '@/api/yyf';
-import { startRecording, stopRecording, startSpeech, stopSpeech } from '@/api/video';
+import { startRecording, stopRecording } from '@/api/video';
 import {
   insertConsultation,
   getConsultationDetail,
@@ -980,7 +980,12 @@ const handleCallBegin = async (params) => {
       userId: selectedConsultation.value.userserialnumber,
       doctorId: selectedConsultation.value.doctorid,
       orderId: selectedConsultation.value.orderid,
-      // 医生看患者字幕的转换格式（默认 traditional：患者普通话简体 → 医生繁体）
+      // 语言参数（医生粤语、患者普通话为默认场景）
+      doctorSpeakLanguage: 'yue-CN',
+      patientSpeakLanguage: 'zh-CN',
+      // 患者看到医生字幕的格式
+      patientOutputFormat: 'simplified',
+      // 医生看到患者字幕的格式（由语言切换按钮控制）
       doctorOutputFormat: currentOutputFormat.value,
     });
     const data = res?.data || {};
@@ -1037,9 +1042,7 @@ const handleCallEnd = async () => {
   // 停止倒计时 & 字幕面板
   callActive.value = false;
 
-  speechTaskId.value = '';
-
-  // 停止双路音频采集，关闭音频WS（Infusionalarm onClose 自动通知 Provider 停止识别）
+  // 停止双路音频采集，关闭音频WS（后端 onClose 自动停止识别，无需额外调接口）
   await stopSpeechCapture();
 
   if (recordId.value) {
@@ -1062,55 +1065,65 @@ const handleCallEnd = async () => {
 };
 
 /**
- * 字幕语言切换：停止患者端旧识别任务，用新 doctorOutputFormat 启动新任务，重连患者音频 WS 和字幕 WS
- * @param {'simplified'|'traditional'|'none'} outputFormat
+ * 字幕语言切换（医生看患者字幕的 doctorOutputFormat）。
+ * 文档说明：关闭音频 WS 后端自动停止识别，没有单独的切换接口。
+ * 正确做法：停止当前双路音频采集（关闭 WS 触发后端停止旧任务），
+ * 重新调 startRecording 用新 outputFormat 启动新任务，重连音频 WS 和字幕 WS。
+ * @param {'simplified'|'traditional'|'en'} outputFormat
  */
 const handleSwitchLang = async (outputFormat) => {
   if (!callActive.value) return;
   if (currentOutputFormat.value === outputFormat) return;
 
-  // 先更新 UI 状态，立即切换高亮按钮
   currentOutputFormat.value = outputFormat;
 
-  // 停止旧患者端识别任务（fire-and-forget，不阻断后续流程）
-  if (userTaskId.value) {
-    stopSpeech(userTaskId.value).catch(() => {});
+  // 1. 停止旧双路音频 WS（后端 onClose 自动停止旧识别任务）
+  await stopSpeechCapture();
+
+  // 2. 停止旧录制
+  if (recordId.value) {
+    await stopRecording(recordId.value).catch(() => {});
+    recordId.value = '';
   }
 
+  // 3. 以新 doctorOutputFormat 重新启动录制 + 识别
   try {
-    // 重启患者端识别任务：
-    //   userId       = 患者手机号（即 userserialnumber）
-    //   language     = 'zh-CN'（患者说普通话，固定不变）
-    //   targetUserId = 'doctor_{doctorId}'（字幕推给医生）
-    //   outputFormat = 新格式（医生看到患者字幕的转换方式）
-    const res = await startSpeech({
+    const res = await startRecording({
       roomId: subtitleRoomId.value,
       userId: selectedConsultation.value.userserialnumber,
-      language: 'zh-CN',
-      targetUserId: `doctor_${selectedConsultation.value.doctorid}`,
-      outputFormat,
+      doctorId: selectedConsultation.value.doctorid,
+      orderId: selectedConsultation.value.orderid,
+      doctorSpeakLanguage: 'yue-CN',
+      patientSpeakLanguage: 'zh-CN',
+      patientOutputFormat: 'simplified',
+      doctorOutputFormat: outputFormat,
     });
-    const newTaskId = res?.data?.taskId || res?.data?.data?.taskId;
-    if (newTaskId) {
-      userTaskId.value = newTaskId;
+    const data = res?.data || {};
+    if (data.recordId) recordId.value = data.recordId;
+    if (data.userTaskId) userTaskId.value = data.userTaskId;
+    if (data.doctorTaskId) doctorTaskId.value = data.doctorTaskId;
+    if (data.audioWsUrl) {
+      audioWsBaseUrl.value = data.audioWsUrl;
+      const match = data.audioWsUrl.match(/^(wss?:\/\/[^/]+)/);
+      if (match) subtitleWsHostRef.value = match[1];
+    }
 
-      // 重连患者端音频 WS（新 taskId 绑定新 outputFormat）
+    // 4. 重新启动双路音频 WS
+    if (data.audioWsUrl && data.doctorTaskId && data.userTaskId) {
       const getTRTCInstance = () => {
         const engine = TUICallKitAPI.getTUICallEngineInstance();
         const cloud = engine?.getTRTCCloudInstance?.();
         return cloud?._trtc ?? null;
       };
-      restartUserAudio(audioWsBaseUrl.value, newTaskId, getTRTCInstance).catch(() => {});
-
-      // 重连字幕 WS，后端将按新 outputFormat 推送转换后的字幕，清空旧字幕
-      subtitlePanelRef.value?.clearSubtitles();
-      subtitlePanelRef.value?.disconnectSubtitleWs();
-      subtitlePanelRef.value?.connectSubtitleWs();
+      startSpeechCapture(data.audioWsUrl, data.doctorTaskId, data.userTaskId, getTRTCInstance);
     }
+
+    // 5. 清空字幕列表并重连字幕 WS（后端将按新 outputFormat 推送）
+    subtitlePanelRef.value?.clearSubtitles();
+    subtitlePanelRef.value?.disconnectSubtitleWs();
+    subtitlePanelRef.value?.connectSubtitleWs();
   } catch (e) {
     console.error('切换语言失败:', e);
-    // 回滚 UI 状态
-    currentOutputFormat.value = currentOutputFormat.value;
   }
 };
 onMounted(async () => {
@@ -1225,7 +1238,7 @@ const PRESCRIP_FILE_URL = 'https://hqgy.gzxinxingyiyuan.com/filedec/file/prescri
 const ADVICE_FILE_URL = 'https://hqgy.gzxinxingyiyuan.com/filedec/file/advicefile';
 const convertImageToBase64 = async (url) => {
   if (!url || !url.startsWith('http')) return url;
-  // 如果已经是 base64，直接返回
+  // 如果已经是 base64，���接返回
   if (url.startsWith('data:')) return url;
   try {
     const response = await fetch(url, { mode: 'cors' });
@@ -1416,7 +1429,7 @@ const saveConsultation = () => {
     if (!extra.dosageForm) return message.warning(`請填寫【${name}】的劑型`);
     if (!extra.frenquency) return message.warning(`請填寫【${name}】的頻次`);
     if (!extra.duration) return message.warning(`請填寫【${name}】的療程`);
-    if (!extra.directionsRoute) return message.warning(`請填寫【${name}】的用法/途徑`);
+    if (!extra.directionsRoute) return message.warning(`��填寫【${name}】的用法/途徑`);
     if (!extra.specialPurpose) return message.warning(`請填寫【${name}】的特殊用途`);
     if (!consultationMed.quantities[id]) return message.warning(`請填寫【${name}】的數量`);
   }
