@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tencentcloud/call-uikit-vue": "^4.0.12",
     "@tencentcloud/chat": "^3.6.6",
     "@trtc/calls-uikit-vue": "^4.4.9",
     "ant-design-vue": "^4.2.6",

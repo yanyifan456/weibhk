@@ -752,6 +752,7 @@ import PatientInfoRow from './PatientInfoRow.vue';
 import PrescriptionUploadTips from './PrescriptionUploadTips.vue';
 import VideoCallTimer from './VideoCallTimer.vue';
 import SubtitlePanel from './SubtitlePanel.vue';
+import { useSpeechRecognition } from './useSpeechRecognition.js';
 // ===== 封装的 Composables =====
 import { useMedicineSelector } from './useMedicineSelector';
 import { useImageUpload } from './useImageUpload';
@@ -913,14 +914,16 @@ const subtitleWsHost = (() => {
     return '';
   }
 })();
-/** 字幕 WS host（响应式，供模板 prop 绑定） */
+/** 字幕 WS host��响应式，供模板 prop 绑定） */
 const subtitleWsHostRef = ref(subtitleWsHost);
 /** 字幕订阅房间 ID */
 const subtitleRoomId = ref('');
 /** 字幕订阅用户 ID（医生端 userId） */
 const subtitleUserId = ref('');
-/** 语音识别任务 ID（用于停止识别） */
+/** 语音识别任务 ID（备用，当前通过关闭音频WS自动停止） */
 const speechTaskId = ref('');
+/** 双路音频采集 Composable */
+const { start: startSpeech, stop: stopSpeech } = useSpeechRecognition();
 
 const roomId = ref('');
 const callId = ref('');
@@ -972,17 +975,21 @@ const handleCallBegin = async (params) => {
     });
     const data = res?.data || {};
     if (data.recordId) recordId.value = data.recordId;
-    if (data.taskId) speechTaskId.value = data.taskId;
 
-    // 从 audioWsUrl（如 ws://192.168.100.14:8089/ws/audio/）提取 host
+    // 从 audioWsUrl 提取字幕 WS host（例：ws://192.168.100.14:8089）
     if (data.audioWsUrl) {
       const match = data.audioWsUrl.match(/^(wss?:\/\/[^/]+)/);
       if (match) subtitleWsHostRef.value = match[1];
     }
-    // doctorTaskId 格式：room_12345_doctor_doctor_001_xxx，从中提取 roomId 和 userId
-    // 直接使用接口约定的字符串 roomId 和 doctor userId
+
+    // 字幕 WS 订阅参数（医生端 userId 加 doctor_ 前缀）
     subtitleRoomId.value = String(roomId.value);
     subtitleUserId.value = `doctor_${selectedConsultation.value.doctorid}`;
+
+    // 启动双路音频采集：医生本地麦克风 + 患者远端音频帧
+    if (data.audioWsUrl && data.doctorTaskId && data.userTaskId) {
+      startSpeech(data.audioWsUrl, data.doctorTaskId, data.userTaskId);
+    }
   } catch (error) {
     console.error('调用startRecording失败:', error);
   }
@@ -1012,6 +1019,9 @@ const handleCallEnd = async () => {
 
   speechTaskId.value = '';
 
+  // 停止双路音频采集，关闭音频WS（Infusionalarm onClose 自动通知 Provider 停止识别）
+  await stopSpeech();
+
   if (recordId.value) {
     try {
       await stopRecording(recordId.value);
@@ -1024,7 +1034,6 @@ const handleCallEnd = async () => {
   recordId.value = '';
 
   // 重置字幕相关状态
-  subtitleWsHost.value = '';
   subtitleRoomId.value = '';
   subtitleUserId.value = '';
 };

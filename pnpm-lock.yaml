@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@tencentcloud/call-uikit-vue':
+        specifier: ^4.0.12
+        version: 4.0.12
       '@tencentcloud/chat':
         specifier: ^3.6.6
         version: 3.6.6
@@ -1048,6 +1051,12 @@ packages:
   '@simonwep/pickr@1.8.2':
     resolution: {integrity: sha512-/l5w8BIkrpP6n1xsetx9MWPWlU6OblN5YgZZphxan0Tq4BByTCETL6lyIeY8lagalS2Nbt4F2W034KHLIiunKA==}
 
+  '@tencentcloud/call-engine-js@3.3.4':
+    resolution: {integrity: sha512-TG8XGWcSNrOzZ7mtFeA64Wpjqocy0JyvkT/o3Md+iVKiNIfescn94ISMG4o8Why7wqGwgmlmkr12f3EJUMW+VA==}
+
+  '@tencentcloud/call-uikit-vue@4.0.12':
+    resolution: {integrity: sha512-cKkYmDVAV2uXp0naelEcXLx0j5RIC0kvZ/4L6g95GXwQX2gsNaMCVEYX4GsFobz+qB3J1WBhuZVAxtAILnv8vw==}
+
   '@tencentcloud/chat@3.6.6':
     resolution: {integrity: sha512-PYPGUoZHw3GjDgM0N72qr0K/Wjp28HAoGaND077sbUQEwYFaMjZ1tuBQZugFG6v8OS8Ihx71yqNshR3xDHvYaA==}
 
@@ -1059,6 +1068,9 @@ packages:
 
   '@tencentcloud/tui-core-lite@1.0.1':
     resolution: {integrity: sha512-EYPEzzUxArtGkhlD6fzzHUjMQJYRdttrLyFjWAemwAQ9yuEvCjPwN0HfMorK6QDOENKfjnSCnyipcE4qzEFHXg==}
+
+  '@tencentcloud/tui-core@2.5.1':
+    resolution: {integrity: sha512-aXZG0INkV9WvFUHgmVQRibCs10r2u/oVb8qAEjW3maytBiLWOJQiK7dzshK9fnfadJAWQ027cpR8lCKz5r5Tlw==}
 
   '@trtc/call-engine-lite-js@4.0.0':
     resolution: {integrity: sha512-75YefNuOirehOv0pk2OnOFMMMV1+33PfGbuPS4/7z/P/W30J/pwhZFA4lNqY/mwaLlVFuTjium2SaetD4B09OQ==}
@@ -1927,6 +1939,12 @@ packages:
   tim-js-sdk@2.27.6:
     resolution: {integrity: sha512-UdeYxn9i4ksCrmcrCwesckvBu/EQA3rUMrIJU13H9Qvz7sY4aojZkwhZpsctAvmV1FxgfT593WNK/7y156EMLQ==}
 
+  tim-profanity-filter-plugin@1.1.0:
+    resolution: {integrity: sha512-+49p+n5LJs18rSPBvJFyq/m6ib8wiXvPEx2/Sz3M7hhDXAz69WuZ8cB/painNrN0MKAETf6G5cWa6xtVZfAK7A==}
+
+  tim-upload-plugin@1.4.3:
+    resolution: {integrity: sha512-3ZmbA36dr3eG9YGDon9MLBUtbNawYWkL+TBa+VS0Uviguc7PlVSOIVRG2C4irXX16slDT2Kj+HAZapp+Xqp2xg==}
+
   tinyglobby@0.2.14:
     resolution: {integrity: sha512-tX5e7OM1HnYr2+a2C/4V0htOcSQcoSTH9KgJnVvNm5zm/cyEWKJ7j7YutsH9CxMdtOkkLFy2AHrMci9IM8IPZQ==}
     engines: {node: '>=12.0.0'}
@@ -1945,8 +1963,14 @@ packages:
   trtc-cloud-js-sdk@2.10.18:
     resolution: {integrity: sha512-bK/XP5E1iE6pI4IzvqlpTsHeLfm5UEFgQfng0+nPsCNC9XuknrRczamn/2wKFbYL95Nj/g3uvtN43SwLOFxtUA==}
 
+  trtc-cloud-js-sdk@2.10.8:
+    resolution: {integrity: sha512-uYF0u40Cg3ZjPql+AAxyCqcHRbobwZ+rsTXj+pIY4/aUrv07h9Rf/LbEt/BQ04E8FTy6hOS8vZIclQ7qWrjs9A==}
+
   trtc-js-sdk@4.15.22:
     resolution: {integrity: sha512-YC0YvHya0Dnrxs9+TsT6L73M5mTKt+Aqar56Hlq+C1LNiuCpCBl+6vs1DTz0yH/NELNl0Oiv6OSl5j6LwSOQrw==}
+
+  trtc-sdk-v5@5.15.0-beta.25:
+    resolution: {integrity: sha512-bpVa+PTrEnbvhszDIvf7gozlFIkhmR3n9sVMKO9yFPidtUd6ueAca38mjKbhcfrDlP4WKVD7SEIwPWis1JqFVQ==}
 
   trtc-sdk-v5@5.15.3-beta.12:
     resolution: {integrity: sha512-CE3mQTj7gB4RIiSGFT5x7GNfT1KP5VVu3C5A8V4Op4nxa4AzCtS4Y6TMuIHH8yGccuzcNLUXYOzov3wxdzvaFw==}
@@ -3090,6 +3114,21 @@ snapshots:
       core-js: 3.45.0
       nanopop: 2.4.2
 
+  '@tencentcloud/call-engine-js@3.3.4':
+    dependencies:
+      '@tencentcloud/chat': 3.6.6
+      core-js: 3.45.0
+      eventemitter3: 4.0.7
+      rtc-detect: 0.0.5
+      trtc-cloud-js-sdk: 2.10.8
+      tuikit-logger: 0.0.4-beta.1
+
+  '@tencentcloud/call-uikit-vue@4.0.12':
+    dependencies:
+      '@tencentcloud/call-engine-js': 3.3.4
+      '@tencentcloud/chat': 3.6.6
+      '@tencentcloud/tui-core': 2.5.1
+
   '@tencentcloud/chat@3.6.6': {}
 
   '@tencentcloud/lite-chat@1.6.13': {}
@@ -3099,6 +3138,12 @@ snapshots:
   '@tencentcloud/tui-core-lite@1.0.1':
     dependencies:
       '@tencentcloud/lite-chat': 1.6.13
+
+  '@tencentcloud/tui-core@2.5.1':
+    dependencies:
+      '@tencentcloud/chat': 3.6.6
+      tim-profanity-filter-plugin: 1.1.0
+      tim-upload-plugin: 1.4.3
 
   '@trtc/call-engine-lite-js@4.0.0':
     dependencies:
@@ -4060,6 +4105,10 @@ snapshots:
 
   tim-js-sdk@2.27.6: {}
 
+  tim-profanity-filter-plugin@1.1.0: {}
+
+  tim-upload-plugin@1.4.3: {}
+
   tinyglobby@0.2.14:
     dependencies:
       fdir: 6.4.6(picomatch@4.0.3)
@@ -4077,7 +4126,15 @@ snapshots:
     dependencies:
       trtc-sdk-v5: 5.15.3-beta.12
 
+  trtc-cloud-js-sdk@2.10.8:
+    dependencies:
+      trtc-sdk-v5: 5.15.0-beta.25
+
   trtc-js-sdk@4.15.22:
+    dependencies:
+      webrtc-adapter: 8.2.4
+
+  trtc-sdk-v5@5.15.0-beta.25:
     dependencies:
       webrtc-adapter: 8.2.4
 
