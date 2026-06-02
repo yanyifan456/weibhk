@@ -155,7 +155,6 @@ import { onPullDownRefresh, onLoad, onShow } from '@dcloudio/uni-app';
 import { updateTabbarBadge } from '@/utils/tabBarBadge.js';
 import { jiaoyan, getuser } from '@/api/yyf.js';
 import { getMsgCount } from '@/api/base.js';
-import { genTestUserSig } from '@/debug/GenerateTestUserSig.js';
 import { connectSubtitleWs, resolveSubtitleWsHost } from '@/utils/speechWs.js';
 
 // ── 字幕状态 ──────────────────────────────────────────────────
@@ -195,123 +194,70 @@ const handleSubtitleMessage = (subtitle) => {
 	scrollToBottom();
 };
 
-// ── TUICallKit 初始化（仅 APP-PLUS）────────────────────────────
-// 注意：整个块只有一个 #ifdef，内部不嵌套条件编译
-// setupTUICallKitListeners 必须在 login 调用前定义，避免 TDZ 问题
+// ── TUICallKit 事件监听（仅 APP-PLUS）────────────────────────────
+// loading.vue 里已完成 login，这里直接用 uni.$TUICallKit 注册事件即可
 // #ifdef APP-PLUS
-try {
-	const TUICallKit = uni.requireNativePlugin('TencentCloud-TUICallKit');
-	console.log('TUICallKit:', TUICallKit);
+onLoad(function () {
+	if (!uni.$TUICallKit) {
+		console.log('[v0] uni.$TUICallKit 不存在，跳过字幕监听');
+		return;
+	}
+	console.log('[v0] 注册字幕相关 TUICallKit 监听器');
 
-	if (!TUICallKit) throw new Error('插件未加载');
+	uni.$TUICallKit.on('onCallBegin', function (data) {
+		console.log('[v0] onCallBegin:', JSON.stringify(data));
 
-	const userID = uni.getStorageSync('phone');
-	const validUserID = String(userID).replace(/[^a-zA-Z0-9_-]/g, '');
-	console.log('validUserID:', validUserID);
+		var roomId = String(data.roomID || data.roomId || data.roomIDStr || '');
+		var rawPhone = uni.getStorageSync('phone') || '';
+		var userId = rawPhone.replace(/[^a-zA-Z0-9_-]/g, '');
 
-	const { userSig, sdkAppID } = genTestUserSig(validUserID);
+		console.log('[v0] roomId=' + roomId + ' userId=' + userId);
+		if (!roomId || !userId) return;
 
-	uni.$TUICallKit = TUICallKit;
+		subtitleList.value = [];
+		currentSubtitleLine.value = null;
+		currentLang.value = 'simplified';
+		subtitleVisible.value = true;
 
-	// ── 先定义监听器函数，再调 login ───────────────────────────
-	// 使用普通函数表达式并赋给 var（var 有变量提升，避免 TDZ）
-	var setupTUICallKitListeners = function () {
+		var apiBaseUrl = uni.getStorageSync('apiBaseUrl') || 'https://hqgy.gzxinxingyiyuan.com/api';
+		var wsHost = resolveSubtitleWsHost(apiBaseUrl);
+		console.log('[v0] 字幕WS地址:', wsHost + '/ws/subtitle/' + roomId + '/' + userId);
+
 		try {
-			console.log('[v0] 注册 TUICallKit 监听器');
-
-			uni.$TUICallKit.on('onInvited', function (data) {
-				console.log('[v0] 收到来电:', JSON.stringify(data));
+			var ws = connectSubtitleWs(wsHost, roomId, userId);
+			subtitleWsClose = ws.close;
+			ws.socketTask.onOpen(function () {
+				console.log('[v0] 字幕WS已连接');
 			});
-
-			uni.$TUICallKit.on('onCallBegin', function (data) {
-				console.log('[v0] 通话开始:', JSON.stringify(data));
-
-				var roomId = String(data.roomID || data.roomId || data.roomIDStr || '');
-				var rawPhone = uni.getStorageSync('phone') || '';
-				var userId = rawPhone.replace(/[^a-zA-Z0-9_-]/g, '');
-
-				console.log('[v0] roomId=' + roomId + ' userId=' + userId);
-
-				if (!roomId || !userId) return;
-
-				subtitleList.value = [];
-				currentSubtitleLine.value = null;
-				currentLang.value = 'simplified';
-				subtitleVisible.value = true;
-
-				// 字幕 WS host：与 API 同机器，端口 8089
-				var apiBaseUrl = uni.getStorageSync('apiBaseUrl') || 'https://hqgy.gzxinxingyiyuan.com/api';
-				var wsHost = resolveSubtitleWsHost(apiBaseUrl);
-				console.log('[v0] 字幕WS:', wsHost + '/ws/subtitle/' + roomId + '/' + userId);
-
-				try {
-					var ws = connectSubtitleWs(wsHost, roomId, userId);
-					subtitleWsClose = ws.close;
-					ws.socketTask.onOpen(function () {
-						console.log('[v0] 字幕WS已连接');
-					});
-					ws.socketTask.onMessage(function (res) {
-						try { handleSubtitleMessage(JSON.parse(res.data)); } catch (e) {}
-					});
-					ws.socketTask.onClose(function (res) {
-						console.log('[v0] 字幕WS关闭 code=' + (res && res.code));
-					});
-					ws.socketTask.onError(function (err) {
-						console.error('[v0] 字幕WS错误:', JSON.stringify(err));
-					});
-				} catch (e) {
-					console.error('[v0] connectSubtitleWs 异常:', e);
-				}
+			ws.socketTask.onMessage(function (res) {
+				try { handleSubtitleMessage(JSON.parse(res.data)); } catch (e) {}
 			});
-
-			uni.$TUICallKit.on('onCallEnd', function (data) {
-				console.log('[v0] 通话结束:', JSON.stringify(data));
-				if (subtitleWsClose) {
-					subtitleWsClose();
-					subtitleWsClose = null;
-				}
-				setTimeout(function () {
-					subtitleVisible.value = false;
-					subtitleList.value = [];
-					currentSubtitleLine.value = null;
-				}, 3000);
+			ws.socketTask.onClose(function (res) {
+				console.log('[v0] 字幕WS关闭 code=' + (res && res.code));
 			});
-
-			uni.$TUICallKit.on('onError', function (err) {
-				console.error('[v0] TUICallKit error:', JSON.stringify(err));
+			ws.socketTask.onError(function (err) {
+				console.error('[v0] 字幕WS错误:', JSON.stringify(err));
 			});
-
-			console.log('[v0] TUICallKit 监听器注册完成');
 		} catch (e) {
-			console.error('[v0] setupTUICallKitListeners 失败:', e);
-		}
-	};
-
-	// ── 监听器定义完毕，再调 login ──────────────────────────────
-	uni.$TUICallKit.login({
-		SDKAppID: sdkAppID,
-		userID: validUserID,
-		userSig,
-		success: function (res) {
-			console.log('TUICallKit 登录成功:', res);
-			setupTUICallKitListeners();
-		},
-		fail: function (err) {
-			console.error('TUICallKit 登录失败:', err);
-			uni.showToast({ title: '通话服务登录失败', icon: 'none' });
+			console.error('[v0] connectSubtitleWs 异常:', e);
 		}
 	});
 
-	uni.$TUICallKit.setSelfInfo({
-		nickName: uni.getStorageSync('userName') || '患者',
-		avatar: '',
-		success: function (res) { console.log('setSelfInfo 成功:', res); },
-		fail: function (err) { console.error('setSelfInfo 失败:', err); }
+	uni.$TUICallKit.on('onCallEnd', function (data) {
+		console.log('[v0] onCallEnd:', JSON.stringify(data));
+		if (subtitleWsClose) {
+			subtitleWsClose();
+			subtitleWsClose = null;
+		}
+		setTimeout(function () {
+			subtitleVisible.value = false;
+			subtitleList.value = [];
+			currentSubtitleLine.value = null;
+		}, 3000);
 	});
-} catch (err) {
-	console.error('TUICallKit 初始化失败:', err);
-	uni.showToast({ title: '通话组件初始化失败', icon: 'none' });
-}
+
+	console.log('[v0] 字幕监听器注册完成');
+});
 // #endif
 
 // ── 轮播图 ────────────────────────────────────────────────────
