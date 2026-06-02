@@ -689,6 +689,23 @@
   </div>
   <!-- 视频通话组件（固定定位，全局显示） -->
   <TUICallKit style="width: 600px; height: 850px; position: fixed; top: 10%; left: 1%; z-index: 9999;" />
+
+  <!-- 30分钟通话倒计时 -->
+  <VideoCallTimer
+    :active="callActive"
+    @timeout="handleTimerTimeout"
+    @warning="handleTimerWarning"
+    ref="videoCallTimerRef"
+  />
+
+  <!-- 实时字幕面板 -->
+  <SubtitlePanel
+    :active="callActive"
+    :ws-host="subtitleWsHost"
+    :room-id="subtitleRoomId"
+    :user-id="subtitleUserId"
+    ref="subtitlePanelRef"
+  />
 </template>
 <script setup>
 // ===== 第三方依赖 =====
@@ -733,6 +750,8 @@ import PrescriptionFormSSS from './PrescriptionFormSSS.vue';
 import PrescriptionForms from './PrescriptionForms.vue';
 import PatientInfoRow from './PatientInfoRow.vue';
 import PrescriptionUploadTips from './PrescriptionUploadTips.vue';
+import VideoCallTimer from './VideoCallTimer.vue';
+import SubtitlePanel from './SubtitlePanel.vue';
 // ===== 封装的 Composables =====
 import { useMedicineSelector } from './useMedicineSelector';
 import { useImageUpload } from './useImageUpload';
@@ -870,6 +889,19 @@ const Sendprescription = async (record) => {
 // -----------------------------------------------
 // ===== TUICallKit 视频通话 =====
 // -----------------------------------------------
+/** 是否正在通话（驱动倒计时和字幕面板） */
+const callActive = ref(false);
+/** 倒计时组件 ref */
+const videoCallTimerRef = ref(null);
+/** 字幕面板 ref */
+const subtitlePanelRef = ref(null);
+/** 字幕 WebSocket 服务地址（从录制接口返回的 audioWsUrl 中解析出 host） */
+const subtitleWsHost = ref('');
+/** 字幕订阅房间 ID */
+const subtitleRoomId = ref('');
+/** 字幕订阅用户 ID（医生端 userId） */
+const subtitleUserId = ref('');
+
 const roomId = ref('');
 const callId = ref('');
 const recordId = ref('');
@@ -917,12 +949,43 @@ const handleCallBegin = async (params) => {
       orderId: selectedConsultation.value.orderid,
     });
     if (res?.data?.recordId) recordId.value = res.data.recordId;
+
+    // 解析字幕 WebSocket 地址，并启动字幕订阅
+    if (res?.data?.audioWsUrl) {
+      // audioWsUrl 格式：ws://host:port/ws/audio/，提取 ws://host:port 部分
+      const match = res.data.audioWsUrl.match(/^(wss?:\/\/[^/]+)/);
+      subtitleWsHost.value = match ? match[1] : '';
+    }
+    subtitleRoomId.value = roomId.value;
+    subtitleUserId.value = sessionStorage.getItem('username') || callerUserID.value;
   } catch (error) {
     console.error('调用startRecording失败:', error);
   }
   if (params.callId) callId.value = params.callId;
+
+  // 启动倒计时 & 字幕面板
+  callActive.value = true;
 };
+
+/** 倒计时结束自动挂断 */
+const handleTimerTimeout = async () => {
+  message.warning('通话时长已达30分钟，即将自动挂断');
+  try {
+    await TUICallKitAPI.hangup();
+  } catch (e) {
+    console.error('自动挂断失败:', e);
+  }
+};
+
+/** 最后5分钟警告回调（字幕组件已处理弹窗，此处可做额外逻辑） */
+const handleTimerWarning = () => {
+  // 可扩展：记录日志、播放提示音等
+};
+
 const handleCallEnd = async () => {
+  // 停止倒计时 & 字幕面板
+  callActive.value = false;
+
   if (recordId.value) {
     try {
       await stopRecording(recordId.value);
@@ -933,6 +996,11 @@ const handleCallEnd = async () => {
   const el = document.querySelector('.tui-call-kit');
   if (el) el.style.display = 'none';
   recordId.value = '';
+
+  // 重置字幕相关状态
+  subtitleWsHost.value = '';
+  subtitleRoomId.value = '';
+  subtitleUserId.value = '';
 };
 onMounted(async () => {
   await init();
@@ -1400,7 +1468,7 @@ const openImgPrescriptionModal = async (record) => {
       console.log('处方单详情:', wpImgPrescriptionDetail.value);
     }
   } catch (error) {
-    console.error('获取处方单详情失败:', error);
+    console.error('获取处��单详情失败:', error);
   }
 };
 const submitImgPrescription = () => {
