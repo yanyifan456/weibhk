@@ -15,10 +15,12 @@
 export function resolveSubtitleWsHost(apiBaseUrl) {
   try {
     const wsProto = apiBaseUrl.startsWith('https') ? 'wss' : 'ws';
-    const host = apiBaseUrl
-      .replace(/^https?:\/\//, '')
-      .replace(/\/.*$/, '')
-      .replace(/:\d+$/, '');
+    // 去掉协议，取 host:port 部分（斜杠前），再去掉端口号
+    // https://hqgy.gzxinxingyiyuan.com/api → hqgy.gzxinxingyiyuan.com
+    // http://192.168.100.14:18085          → 192.168.100.14
+    const withoutProto = apiBaseUrl.replace(/^https?:\/\//, '');
+    const hostWithPort = withoutProto.split('/')[0];
+    const host = hostWithPort.replace(/:\d+$/, '');
     return `${wsProto}://${host}:8089`;
   } catch (e) {
     return 'ws://192.168.100.14:8089';
