@@ -280,3 +280,5 @@ export const videolist = (params) =>
   request.post("/video/record/select/consultation/video/list", params);
 export const selectUserDetail = (params) =>
   request.post("/mini/user/selectUserDetail", params);
+export const updateMedicationReceipt = (params) =>
+  request.post("/acceptexpenditure/updateMedicationReceipt", params);

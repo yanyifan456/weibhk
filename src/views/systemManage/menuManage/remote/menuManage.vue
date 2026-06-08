@@ -688,7 +688,15 @@
     </a-modal>
   </div>
   <!-- 视频通话组件（固定定位，全局显示） -->
-  <TUICallKit style="width: 600px; height: 850px; position: fixed; top: 10%; left: 1%; z-index: 9999;" />
+  <TUICallKit style="width: 600px; height: 650px; position: fixed; top: 7%; left: 1%; z-index: 9999;" />
+
+  <!-- 30分钟通话倒计时 -->
+  <VideoCallTimer :active="callActive" @timeout="handleTimerTimeout" @warning="handleTimerWarning"
+    ref="videoCallTimerRef" />
+
+  <!-- 实时字幕面板 -->
+  <SubtitlePanel :active="callActive" :ws-host="subtitleWsHostRef" :room-id="subtitleRoomId" :user-id="subtitleUserId"
+    :second-user-id="subtitleSecondUserId" ref="subtitlePanelRef" />
 </template>
 <script setup>
 // ===== 第三方依赖 =====
@@ -733,6 +741,9 @@ import PrescriptionFormSSS from './PrescriptionFormSSS.vue';
 import PrescriptionForms from './PrescriptionForms.vue';
 import PatientInfoRow from './PatientInfoRow.vue';
 import PrescriptionUploadTips from './PrescriptionUploadTips.vue';
+import VideoCallTimer from './VideoCallTimer.vue';
+import SubtitlePanel from './SubtitlePanel.vue';
+import { useSpeechRecognition } from './useSpeechRecognition.js';
 // ===== 封装的 Composables =====
 import { useMedicineSelector } from './useMedicineSelector';
 import { useImageUpload } from './useImageUpload';
@@ -779,7 +790,7 @@ const handleReset = () => {
   getlists();
 };
 // -----------------------------------------------
-// 表格列定义
+// 表格列定��
 // -----------------------------------------------
 const columns = computed(() => [
   { title: t('label.appointmentNumber'), dataIndex: 'orderid', key: 'orderid', align: 'center' },
@@ -870,6 +881,47 @@ const Sendprescription = async (record) => {
 // -----------------------------------------------
 // ===== TUICallKit 视频通话 =====
 // -----------------------------------------------
+/** 是否正在通话（驱动倒计时和字幕面板） */
+const callActive = ref(false);
+/** 倒计时组件 ref */
+const videoCallTimerRef = ref(null);
+/** 字幕面板 ref */
+const subtitlePanelRef = ref(null);
+/**
+ * 字幕 WebSocket 服务 host。
+ * 字幕服务与业务 API 在同一台机器，端口固定 8089。
+ * 从 VITE_API_URL（如 http://192.168.100.14:18085）中提取 host，替换端口为 8089，
+ * 协议改为 ws:// / wss://，得到 ws://192.168.100.14:8089。
+ */
+const subtitleWsHost = (() => {
+  try {
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+    // 支持 http/https，转换为 ws/wss
+    const wsProto = apiUrl.startsWith('https') ? 'wss' : 'ws';
+    // 提取 host（去掉协议、去掉路径）
+    const host = apiUrl.replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/:\d+$/, '');
+    return `${wsProto}://${host}:8089`;
+  } catch {
+    return '';
+  }
+})();
+/** 字幕 WS host��响应式，供模板 prop 绑定） */
+const subtitleWsHostRef = ref(subtitleWsHost);
+/** 字幕订阅房间 ID */
+const subtitleRoomId = ref('');
+/** 字幕订阅用户 ID（医生端 userId，如 doctor_16） */
+const subtitleUserId = ref('');
+/** 字幕订阅第二用户 ID（患者手机号），用于接收医生自己说的话 */
+const subtitleSecondUserId = ref('');
+/** 患者端识别任务ID（语言切换时需要停止旧任务、启动新任务） */
+const userTaskId = ref('');
+/** 医生端识别任务ID */
+const doctorTaskId = ref('');
+/** 音频WS基础地址（如 ws://192.168.100.14:8089/ws/audio/） */
+const audioWsBaseUrl = ref('');
+/** 双路音频采集 Composable */
+const { start: startSpeechCapture, stop: stopSpeechCapture, restartUserAudio } = useSpeechRecognition();
+
 const roomId = ref('');
 const callId = ref('');
 const recordId = ref('');
@@ -909,20 +961,95 @@ const startConsultation = async () => {
 const handleCallBegin = async (params) => {
   if (!params) return;
   roomId.value = params.roomID;
+  if (params.callId) callId.value = params.callId;
+
   try {
-    const res = await startRecording({
-      roomId: roomId.value,
+    const reqParams = {
+      roomId: String(roomId.value),
       userId: selectedConsultation.value.userserialnumber,
       doctorId: selectedConsultation.value.doctorid,
       orderId: selectedConsultation.value.orderid,
-    });
-    if (res?.data?.recordId) recordId.value = res.data.recordId;
+      doctorSpeakLanguage: 'yue-CN',
+      patientSpeakLanguage: 'zh-CN',
+      patientOutputFormat: 'simplified',
+      doctorOutputFormat: 'traditional',
+      doctorTargetUserId: `doctor_${selectedConsultation.value.doctorid}`,
+    };
+    console.log("[CallBegin] startRecording 入参:", JSON.stringify(reqParams));
+
+    const res = await startRecording(reqParams);
+    console.log("[CallBegin] startRecording 原始返回:", JSON.stringify(res));
+
+    const data = res?.data || {};
+    console.log("[CallBegin] startRecording data:", JSON.stringify(data));
+
+    if (data.recordId) recordId.value = data.recordId;
+    if (data.userTaskId) userTaskId.value = data.userTaskId;
+    if (data.doctorTaskId) doctorTaskId.value = data.doctorTaskId;
+    if (data.audioWsUrl) audioWsBaseUrl.value = data.audioWsUrl;
+
+    if (data.audioWsUrl) {
+      const match = data.audioWsUrl.match(/^(wss?:\/\/[^/]+)/);
+      if (match) subtitleWsHostRef.value = match[1];
+    }
+
+    subtitleRoomId.value = String(roomId.value);
+    subtitleUserId.value = `doctor_${selectedConsultation.value.doctorid}`;
+    subtitleSecondUserId.value = selectedConsultation.value.userserialnumber || '';
+
+    if (data.audioWsUrl && data.doctorTaskId && data.userTaskId) {
+      console.log("[CallBegin] 音频采集条件满足，启动双路采集");
+      const getTRTCInstance = () => {
+        try {
+          const engine = TUICallKitAPI.getTUICallEngineInstance();
+          console.log("[CallBegin] TUICallEngine:", engine ? "获取成功" : "null");
+          const cloud = engine?.getTRTCCloudInstance?.();
+          console.log("[CallBegin] TRTCCloud:", cloud ? "获取成功" : "null");
+          const trtc = cloud?._trtc ?? cloud?.trtcCloud ?? cloud?.trtc ?? null;
+          console.log("[CallBegin] 原始 TRTC 实例:", trtc ? "获取成功" : "null");
+          return trtc;
+        } catch (e) {
+          console.error("[CallBegin] 获取 TRTC 实例异常:", e);
+          return null;
+        }
+      };
+      startSpeechCapture(data.audioWsUrl, data.doctorTaskId, data.userTaskId, getTRTCInstance);
+    } else {
+      console.warn("[CallBegin] 音频采集条件不满足:", {
+        audioWsUrl: data.audioWsUrl,
+        doctorTaskId: data.doctorTaskId,
+        userTaskId: data.userTaskId,
+      });
+    }
   } catch (error) {
-    console.error('调用startRecording失败:', error);
+    console.error('[CallBegin] startRecording 调用失败:', error);
   }
-  if (params.callId) callId.value = params.callId;
+
+  callActive.value = true;
 };
+
+/** 倒计时结束自动挂断 */
+const handleTimerTimeout = async () => {
+  message.warning('通话时长已达30分钟，即将自动挂断');
+  try {
+    await TUICallKitAPI.hangup();
+  } catch (e) {
+    console.error('自动挂断失败:', e);
+  }
+};
+
+/** 最后5分钟警告回调（字幕组件已处理弹窗，此处可做额外逻辑） */
+const handleTimerWarning = () => {
+  // 可扩展：记录日志、播放提示音等
+};
+
 const handleCallEnd = async () => {
+  // 停止倒计时 & 字幕面板
+  callActive.value = false;
+
+  // 停止双路音频采集，关闭音频WS（后端 onClose 自动停止识别，无需额外调接口）
+  await stopSpeechCapture();
+
   if (recordId.value) {
     try {
       await stopRecording(recordId.value);
@@ -933,7 +1060,16 @@ const handleCallEnd = async () => {
   const el = document.querySelector('.tui-call-kit');
   if (el) el.style.display = 'none';
   recordId.value = '';
+
+  // 重置字幕相关状态
+  subtitleRoomId.value = '';
+  subtitleUserId.value = '';
+  subtitleSecondUserId.value = '';
+  userTaskId.value = '';
+  doctorTaskId.value = '';
+  audioWsBaseUrl.value = '';
 };
+
 onMounted(async () => {
   await init();
   try {
@@ -954,7 +1090,7 @@ onUnmounted(() => {
       engine.off('onCallEnd', handleCallEnd);
     }
   } catch (error) {
-    console.error('移除事件监听失败:', error);
+    console.error('��除事件监听失败:', error);
   }
 });
 // -----------------------------------------------
@@ -1046,7 +1182,7 @@ const PRESCRIP_FILE_URL = 'https://hqgy.gzxinxingyiyuan.com/filedec/file/prescri
 const ADVICE_FILE_URL = 'https://hqgy.gzxinxingyiyuan.com/filedec/file/advicefile';
 const convertImageToBase64 = async (url) => {
   if (!url || !url.startsWith('http')) return url;
-  // 如果已经是 base64，直接返回
+  // 如果已经是 base64，���接返回
   if (url.startsWith('data:')) return url;
   try {
     const response = await fetch(url, { mode: 'cors' });
@@ -1237,7 +1373,7 @@ const saveConsultation = () => {
     if (!extra.dosageForm) return message.warning(`請填寫【${name}】的劑型`);
     if (!extra.frenquency) return message.warning(`請填寫【${name}】的頻次`);
     if (!extra.duration) return message.warning(`請填寫【${name}】的療程`);
-    if (!extra.directionsRoute) return message.warning(`請填寫【${name}】的用法/途徑`);
+    if (!extra.directionsRoute) return message.warning(`��填寫【${name}】的用法/途徑`);
     if (!extra.specialPurpose) return message.warning(`請填寫【${name}】的特殊用途`);
     if (!consultationMed.quantities[id]) return message.warning(`請填寫【${name}】的數量`);
   }
@@ -1246,7 +1382,7 @@ const saveConsultation = () => {
       !item.dosageForm && !item.frenquency && !item.duration && !item.directionsRoute && !item.specialPurpose;
     if (isEmpty) continue;
     if (!item.name) return message.warning('請填寫手動新增藥品名稱');
-    if (!item.medicineCun) return message.warning(`請填寫【${item.name}】的數量`);
+    if (!item.medicineCun) return message.warning(`請填寫【${item.name}】的數��`);
     if (!item.dosageForm) return message.warning(`請填寫【${item.name}】的劑型`);
     if (!item.frenquency) return message.warning(`請填寫【${item.name}】的頻次`);
     if (!item.duration) return message.warning(`請填寫【${item.name}】的療程`);
@@ -1400,7 +1536,7 @@ const openImgPrescriptionModal = async (record) => {
       console.log('处方单详情:', wpImgPrescriptionDetail.value);
     }
   } catch (error) {
-    console.error('获取处方单详情失败:', error);
+    console.error('获取处��单详情失败:', error);
   }
 };
 const submitImgPrescription = () => {
@@ -1421,12 +1557,12 @@ const submitImgPrescription = () => {
     ...wpImgPrescriptionDetail.value,
     consultationMedicine: wpImgUpload.uploadedUrl.value,
   };
-  // 弹第一步：预览处方单 + 截图上传
+  // 弹第一步：预览处方单 + 截��上传
   wpImgPrescriptionImageUrl.value = '';
   wpImgConfirmSignVisible.value = true;
 };
 /**
- * 图片上传处方 - 第一步确认：截图 → 上传到处方接口（prescripfile） → 成功后弹第二步
+ * 图片上传处方 - 第一步确认：截图 �� 上传到处方接口（prescripfile） → 成功后弹第二步
  */
 const handleWpImgPrescriptionStep1Ok = async () => {
   wpImgPrescriptionUploading.value = true;
@@ -1524,7 +1660,7 @@ const submitWritePrescription = (detail) => {
   wpConfirmSignVisible.value = true;
 };
 /**
- * 处方单第一步确认：截图 → 上传到处方接口（prescripfile） → 成功后弹第二步
+ * 处方单第一步确认：截�� → 上传到处方接口（prescripfile） → 成功后弹第二步
  */
 const handlePrescriptionStep1Ok = async () => {
   prescriptionUploading.value = true;
@@ -1765,7 +1901,7 @@ const saveEditSuggestion = () => {
     if (!item.clazz) return message.warning(`請填寫【${item.name}】的藥品分類`);
     if (!item.spec) return message.warning(`請填寫【${item.name}】的藥品規格`);
   }
-  // 弹第一步：预览建议单 + 截图上传
+  // 弹第一步：预览建议单 + 截���上传
   editSuggestionImageUrl.value = '';
   editSuggestionConfirmSignVisible.value = true;
 };
@@ -1838,7 +1974,7 @@ const editPrescriptionConfirmNameVisible = ref(false);
 const editPrescriptionPreviewRef = ref(null);
 /** 修改处方单上传中标志 */
 const editPrescriptionUploading = ref(false);
-/** 修改处方单上传成功后的图片 URL */
+/** 修改处方单上传成功���的图片 URL */
 const editPrescriptionImageUrl = ref('');
 const epUpload = useImageUpload(
   () => editPrescriptionRecord.value?.userserialnumber || editPrescriptionRecord.value?.serialNumber || '',
@@ -1891,7 +2027,7 @@ const saveEditPrescription = () => {
   editPrescriptionConfirmSignVisible.value = true;
 };
 /**
- * 修改处方单 - 第一步确认：截图 → 上传到处方接口（prescripfile） → 成功后弹第二步
+ * 修改处方单 - 第一步确认：截图 → 上传���处方接口（prescripfile） → 成功后弹第二步
  */
 const handleEditPrescriptionStep1Ok = async () => {
   console.log(detail.consultationMedicine)

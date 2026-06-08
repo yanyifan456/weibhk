@@ -229,8 +229,8 @@
                         <a-col :span="6">
                             <a-form-item label="物流费用">
                                 <span style="color: red;">*</span>
-                                <a-input-number v-model:value="logisticsCost" :min="0" :max="100000000" :precision="2"
-                                    placeholder="物流费用" style="width: 220px" />
+                                <a-input-number :value="currentAuditRecord?.logisticsFee" :min="0" :max="100000000" :precision="2"
+                                    placeholder="物流费用" style="width: 220px" disabled />
                             </a-form-item>
                         </a-col>
                     </a-row>
@@ -246,7 +246,7 @@
                     </div>
                     <div class="mb-2">
                         <span class="font-bold">物流费用：</span>
-                        <span class="text-lg font-bold text-red-600">{{ logisticsCost || 0 }}</span>
+                        <span class="text-lg font-bold text-red-600">{{ currentAuditRecord?.logisticsFee || 0 }}</span>
                     </div>
                     <div>
                         <span class="font-bold">总价：</span>
@@ -409,7 +409,6 @@ const weight = ref(''); // 重量 kg
 const quantity = ref(''); // 件数
 const volume = ref(''); // 体积 cm3
 const desName = ref(''); // 寄托物描述，最大200字符
-const logisticsCost = ref(''); // 物流费用
 const medicineColumns = [
     { title: "药品名称", dataIndex: "name", key: "name", align: "center", width: 250 },
     { title: "规格", dataIndex: "spec", key: "spec", align: "center", width: 150 },
@@ -586,7 +585,7 @@ const showConsultationReport = (record) => {
 const calculateAllTotalPrice = () => {
     const medicineTotal = parseFloat(calculateMedicineTotalPrice()) || 0;
     const taxTotal = parseFloat(calculatePostalTaxTotal()) || 0;
-    const logistics = parseFloat(logisticsCost.value) || 0;
+    const logistics = parseFloat(currentAuditRecord.value?.logisticsFee) || 0;
     return (medicineTotal + taxTotal + logistics).toFixed(2);
 };
 
@@ -696,13 +695,13 @@ const confirmMedicinePrice = async () => {
         return;
     }
 
-    if (!logisticsCost.value && parseFloat(logisticsCost.value) !== 0) {
-        message.warning('请填写物流费用');
+    if (!currentAuditRecord.value?.logisticsFee && parseFloat(currentAuditRecord.value?.logisticsFee) !== 0) {
+        message.warning('物流费用未返回，请确认接口数据');
         return;
     }
 
     // 验证物流费用是有效数字
-    if (isNaN(parseFloat(logisticsCost.value)) || parseFloat(logisticsCost.value) < 0) {
+    if (isNaN(parseFloat(currentAuditRecord.value?.logisticsFee)) || parseFloat(currentAuditRecord.value?.logisticsFee) < 0) {
         message.warning('物流费用必须是非负数');
         return;
     }
@@ -751,7 +750,7 @@ const confirmMedicinePrice = async () => {
             quantity: quantity.value,
             volume: volume.value,
             desName: desName.value,
-            logisticsFee: logisticsCost.value, // 添加物流费用参数
+            logisticsFee: currentAuditRecord.value?.logisticsFee, // 物流费用（接口返回）
             medicineFee: calculateMedicineTotalPrice(), // 添加药品费用参数
 
         });

@@ -21,7 +21,7 @@ export function startRecording(data) {
 
 export const stopRecording = (recordId) => {
   return request({
-    url: '/video/record/stop/' + recordId,
-    method: 'post'
+    url: "/video/record/stop/" + recordId,
+    method: "post",
   });
 };

@@ -659,6 +659,10 @@
                     <a-button style="margin-right: 16px;" @click="handleDrugFeeReceiptExport">
                         導出
                     </a-button>
+                    <a-button style="margin-right: 16px;" @click="handleDrugFeeReceiptGenerateLink"
+                        :loading="generateLinkLoading">
+                        生成鏈接
+                    </a-button>
                     <a-button type="primary" @click="handleDrugFeeReceiptPrint">
                         打印
                     </a-button>
@@ -773,7 +777,7 @@
 import { ref, reactive, computed, onMounted } from "vue";
 import { message } from "ant-design-vue";
 import { useI18n } from "vue-i18n";
-import { acceptance, selectprescriptiondetail, receipt, updexpenditure, attorney, selectPharmacyAuditDetail } from "@/api/yyf.js";
+import { acceptance, selectprescriptiondetail, receipt, updexpenditure, attorney, selectPharmacyAuditDetail, updateMedicationReceipt } from "@/api/yyf.js";
 import dayjs from "dayjs";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -1261,11 +1265,13 @@ const handleReceiptExport = async () => {
 const drugFeeReceiptVisible = ref(false);
 const drugFeeReceiptData = ref({});
 const drugFeeReceiptPrintRef = ref(null);
+const generateLinkLoading = ref(false);
 
 // 显示药费收据弹窗
 const showDrugFeeReceiptModal = (record) => {
     console.log('showDrugFeeReceiptModal', record);
     drugFeeReceiptData.value = {
+        tradeId: record.tradeId || '',
         formId: record.formId || '',
         userName: record.userName || '',
         hkChargeId: record.hkChargeId || '',
@@ -1364,6 +1370,67 @@ const handleDrugFeeReceiptExport = async () => {
     } catch (error) {
         console.error('导出失败', error);
         message.error(t('receipt.exportFailed'));
+    }
+};
+
+// 药费收据生成链接（截图 + 上传）
+const handleDrugFeeReceiptGenerateLink = async () => {
+    console.log(drugFeeReceiptData.value);
+    const element = drugFeeReceiptPrintRef.value;
+    if (!element) return;
+
+    generateLinkLoading.value = true;
+    try {
+        const canvas = await html2canvas(element, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            logging: false,
+            backgroundColor: '#ffffff',
+        });
+
+        // canvas 转 Blob
+        const blob = await new Promise((resolve) => {
+            canvas.toBlob((b) => resolve(b), 'image/png');
+        });
+
+        // 构建 FormData
+        const formData = new FormData();
+        formData.append('file', blob, `receipt_${drugFeeReceiptData.value.tradeId || Date.now()}.png`);
+        formData.append('medicineId', drugFeeReceiptData.value.tradeId);
+
+        const res = await axios.post('/file/medicinphoto', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        console.log('生成链接响应:', res.data);
+        if (res.data && (res.data.code === "200" || res.data.code === '200')) {
+            const url = res.data.data.data;
+            if (url) {
+                // 调用 updateMedicationReceipt 保存链接
+                const ddd = await updateMedicationReceipt({
+                    tradeId: drugFeeReceiptData.value.tradeId,
+                    drugFeeUrl: url,
+                });
+                console.log(ddd);
+                if (ddd.data.code === "1000") {
+                    message.success('鏈接已保存到後台');
+                } else {
+                    message.error(ddd.data?.msg || '保存链接失败');
+                }
+
+
+            } else {
+                message.success('圖片已上傳成功');
+            }
+        } else {
+            message.error(res.data?.msg || '生成鏈接失敗');
+        }
+    } catch (error) {
+        console.error('生成鏈接失敗', error);
+        message.error('生成鏈接失敗');
+    } finally {
+        generateLinkLoading.value = false;
     }
 };
 // ==================== 药物授权委托书弹窗 ====================
@@ -1596,6 +1663,7 @@ const handleLogisticsSubmit = async (record) => {
             tradeStatus: "3",
             dispenseStaff: sessionStorage.getItem("username"),
         });
+        console.log(res);
         if (res.code == 200) {
             if (res.data.code == 1000) {
                 message.success(t("receipt.saveSuccess"));
