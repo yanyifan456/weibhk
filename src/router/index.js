@@ -15,13 +15,17 @@ const routes = [
   },
   {
     path: "/login",
-    name: "Login",
-    component: () => import("@/views/Login/Login.vue"),
+    name: "login",
+    component: () => import("@/views/login/login.vue"),
   },
   {
     path: "/home",
     name: "home",
-    meta: { title: "menu.home", requiresAuth: false, icon: "https://www.gzxinxingyiyuan.com/images/image/1.png" },
+    meta: {
+      title: "menu.home",
+      requiresAuth: false,
+      icon: "https://www.gzxinxingyiyuan.com/images/image/1.png",
+    },
     component: () => import("@/views/Home/Home.vue"),
   },
   {

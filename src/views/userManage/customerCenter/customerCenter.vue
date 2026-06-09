@@ -4,21 +4,24 @@
       <a-form layout="inline" class="search-form">
         <a-form-item class="search-actions">
           <a-button style="margin-left: 8px" @click="daochu">{{ t("button.daochu") }}</a-button>
-          <a-button type="primary" style="margin-left: 8px" @click="showAddModal">{{ t("button.Patientadd") }}</a-button>
+          <a-button type="primary" style="margin-left: 8px" @click="showAddModal">{{
+              t("button.Patientadd")
+            }}
+          </a-button>
         </a-form-item>
       </a-form>
     </a-card>
     <a-card>
       <a-table
-        :columns="columns"
-        :data-source="tableData"
-        :pagination="pagination"
-        row-key="id"
-        :scroll="{ y: 470 }"
-        bordered
-        class="patient-table"
-        @change="handleTableChange"
-        :loading="loading"
+          :columns="columns"
+          :data-source="tableData"
+          :pagination="pagination"
+          row-key="id"
+          :scroll="{ y: 470 }"
+          bordered
+          class="patient-table"
+          @change="handleTableChange"
+          :loading="loading"
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.isSwitch">
@@ -36,12 +39,12 @@
     </a-card>
 
     <a-modal
-      v-model:open="addModalVisible"
-      :title="t('button.Patientadd')"
-      width="750px"
-      @ok="handleAddSubmit"
-      destroyOnClose
-      @cancel="handleAddCancel"
+        v-model:open="addModalVisible"
+        :title="t('button.Patientadd')"
+        width="750px"
+        @ok="handleAddSubmit"
+        destroyOnClose
+        @cancel="handleAddCancel"
     >
       <a-form :model="addForm" layout="vertical" ref="addformRef" :rules="addFormRules">
         <a-row :gutter="16">
@@ -72,10 +75,10 @@
           <a-col :span="12">
             <a-form-item label="登錄賬號" name="loginName">
               <a-select
-                v-model:value="addForm.loginName"
-                placeholder="請選擇登錄賬號"
-                allow-clear
-                @change="handleLoginAccountChange"
+                  v-model:value="addForm.loginName"
+                  placeholder="請選擇登錄賬號"
+                  allow-clear
+                  @change="handleLoginAccountChange"
               >
                 <a-select-option v-for="item in loginAccountList" :key="item.loginName" :value="item.loginName">
                   {{ item.loginName }}
@@ -98,10 +101,10 @@
           <a-col :span="12">
             <a-form-item label="機構" name="orgId">
               <a-cascader
-                v-model:value="addForm.orgId"
-                :options="orgList"
-                placeholder="請選擇機構"
-                :field-names="{ label: 'label', value: 'id', children: 'children' }"
+                  v-model:value="addForm.orgId"
+                  :options="orgList"
+                  placeholder="請選擇機構"
+                  :field-names="{ label: 'label', value: 'id', children: 'children' }"
               />
             </a-form-item>
           </a-col>
@@ -134,7 +137,8 @@
           </a-col>
           <a-col :span="12">
             <a-form-item label="大陸行醫資格証" name="proQualifyCertificate">
-              <a-input v-model:value="addForm.proQualifyCertificate" :placeholder="t('public.input') + '大陸行醫資格証'"/>
+              <a-input v-model:value="addForm.proQualifyCertificate"
+                       :placeholder="t('public.input') + '大陸行醫資格証'"/>
             </a-form-item>
           </a-col>
         </a-row>
@@ -142,10 +146,10 @@
           <a-col :span="12">
             <a-form-item :label="t('menu.PHARMACY')" name="nameChi">
               <a-select
-                v-model:value="addForm.nameChi"
-                :placeholder="t('placeholder.PHARMACY')"
-                allow-clear
-                @change="handleHospitalChange"
+                  v-model:value="addForm.nameChi"
+                  :placeholder="t('placeholder.PHARMACY')"
+                  allow-clear
+                  @change="handleHospitalChange"
               >
                 <a-select-option v-for="item in menzhenlist" :key="item.hospitalId" :value="item.hospitalName">
                   {{ item.hospitalName }}
@@ -159,10 +163,10 @@
           <a-col :span="12" style="display: flex; justify-content: space-around">
             <a-form-item label="醫生印章" name="esignature">
               <a-upload
-                v-model:file-list="addForm.esignature"
-                list-type="picture-card"
-                :before-upload="beforeUpload"
-                @preview="handlePreview"
+                  v-model:file-list="addForm.esignature"
+                  list-type="picture-card"
+                  :before-upload="beforeUpload"
+                  @preview="handlePreview"
               >
                 <div v-if="addForm.esignature.length < 1">
                   <plus-outlined/>
@@ -172,11 +176,11 @@
             </a-form-item>
             <a-form-item label="醫生頭像" name="doctorPhotoFileList">
               <a-upload
-                v-model:file-list="addForm.doctorPhotoFileList"
-                list-type="picture-card"
-                :customRequest="createPhotoUploader(addForm)"
-                :show-upload-list="true"
-                @preview="handlePreview"
+                  v-model:file-list="addForm.doctorPhotoFileList"
+                  list-type="picture-card"
+                  :customRequest="createPhotoUploader(addForm)"
+                  :show-upload-list="true"
+                  @preview="handlePreview"
               >
                 <div v-if="addForm.doctorPhotoFileList.length < 1">
                   <plus-outlined/>
@@ -202,11 +206,11 @@
           <a-col :span="24">
             <a-form-item label="執業有效期" name="professionValidity">
               <a-range-picker
-                v-model:value="addForm.professionValidity"
-                :placeholder="['開始日期', '結束日期']"
-                format="YYYY-MM-DD"
-                value-format="YYYY-MM-DD"
-                style="width: 100%"
+                  v-model:value="addForm.professionValidity"
+                  :placeholder="['開始日期', '結束日期']"
+                  format="YYYY-MM-DD"
+                  value-format="YYYY-MM-DD"
+                  style="width: 100%"
               />
             </a-form-item>
           </a-col>
@@ -215,12 +219,12 @@
     </a-modal>
 
     <a-modal
-      v-model:open="editModalVisible"
-      :title="t('button.edit')"
-      width="750px"
-      @ok="handleEditSubmit"
-      destroyOnClose
-      @cancel="handleEditCancel"
+        v-model:open="editModalVisible"
+        :title="t('button.edit')"
+        width="750px"
+        @ok="handleEditSubmit"
+        destroyOnClose
+        @cancel="handleEditCancel"
     >
       <a-form :model="editForm" layout="vertical" ref="editformRef" :rules="editFormRules">
         <a-row :gutter="16">
@@ -272,10 +276,10 @@
           <a-col :span="12">
             <a-form-item label="機構" name="orgId">
               <a-cascader
-                v-model:value="editForm.orgId"
-                :options="orgList"
-                placeholder="請選擇機構"
-                :field-names="{ label: 'label', value: 'id', children: 'children' }"
+                  v-model:value="editForm.orgId"
+                  :options="orgList"
+                  placeholder="請選擇機構"
+                  :field-names="{ label: 'label', value: 'id', children: 'children' }"
               />
             </a-form-item>
           </a-col>
@@ -308,7 +312,8 @@
           </a-col>
           <a-col :span="12">
             <a-form-item label="大陸行醫資格証" name="proQualifyCertificate">
-              <a-input v-model:value="editForm.proQualifyCertificate" :placeholder="t('public.input') + '大陸行醫資格証'"/>
+              <a-input v-model:value="editForm.proQualifyCertificate"
+                       :placeholder="t('public.input') + '大陸行醫資格証'"/>
             </a-form-item>
           </a-col>
         </a-row>
@@ -316,10 +321,10 @@
           <a-col :span="12">
             <a-form-item :label="t('menu.PHARMACY')" name="nameChi">
               <a-select
-                v-model:value="editForm.nameChi"
-                :placeholder="t('placeholder.PHARMACY')"
-                allow-clear
-                @change="handleEditHospitalChange"
+                  v-model:value="editForm.nameChi"
+                  :placeholder="t('placeholder.PHARMACY')"
+                  allow-clear
+                  @change="handleEditHospitalChange"
               >
                 <a-select-option v-for="item in menzhenlist" :key="item.hospitalId" :value="item.hospitalName">
                   {{ item.hospitalName }}
@@ -333,10 +338,10 @@
           <a-col :span="12" style="display: flex; justify-content: space-around">
             <a-form-item label="醫生印章" name="esignature">
               <a-upload
-                v-model:file-list="editForm.esignature"
-                list-type="picture-card"
-                :before-upload="beforeUpload"
-                @preview="handlePreview"
+                  v-model:file-list="editForm.esignature"
+                  list-type="picture-card"
+                  :before-upload="beforeUpload"
+                  @preview="handlePreview"
               >
                 <div v-if="editForm.esignature.length < 1">
                   <plus-outlined/>
@@ -346,11 +351,11 @@
             </a-form-item>
             <a-form-item label="醫生頭像" name="doctorPhotoFileList">
               <a-upload
-                v-model:file-list="editForm.doctorPhotoFileList"
-                list-type="picture-card"
-                :customRequest="createPhotoUploader(editForm)"
-                :show-upload-list="true"
-                @preview="handlePreview"
+                  v-model:file-list="editForm.doctorPhotoFileList"
+                  list-type="picture-card"
+                  :customRequest="createPhotoUploader(editForm)"
+                  :show-upload-list="true"
+                  @preview="handlePreview"
               >
                 <div v-if="editForm.doctorPhotoFileList.length < 1">
                   <plus-outlined/>
@@ -376,11 +381,11 @@
           <a-col :span="24">
             <a-form-item label="執業有效期" name="professionValidity">
               <a-range-picker
-                v-model:value="editForm.professionValidity"
-                :placeholder="['開始日期', '結束日期']"
-                format="YYYY-MM-DD"
-                value-format="YYYY-MM-DD"
-                style="width: 100%"
+                  v-model:value="editForm.professionValidity"
+                  :placeholder="['開始日期', '結束日期']"
+                  format="YYYY-MM-DD"
+                  value-format="YYYY-MM-DD"
+                  style="width: 100%"
               />
             </a-form-item>
           </a-col>
@@ -389,13 +394,13 @@
     </a-modal>
 
     <a-modal
-      v-model:open="channelModalVisible"
-      title="預約渠道"
-      width="520px"
-      @ok="handleChannelSubmit"
-      @cancel="handleChannelCancel"
-      ok-text="保存"
-      cancel-text="取消"
+        v-model:open="channelModalVisible"
+        title="預約渠道"
+        width="520px"
+        @ok="handleChannelSubmit"
+        @cancel="handleChannelCancel"
+        ok-text="保存"
+        cancel-text="取消"
     >
       <div class="channel-modal">
         <div class="channel-header">
@@ -417,11 +422,11 @@
     </a-modal>
 
     <a-modal
-      v-model:open="detailModalVisible"
-      title="醫生詳情"
-      width="750px"
-      :footer="null"
-      @cancel="detailModalVisible = false"
+        v-model:open="detailModalVisible"
+        title="醫生詳情"
+        width="750px"
+        :footer="null"
+        @cancel="detailModalVisible = false"
     >
       <a-form :model="detailForm" layout="vertical" class="detail-form">
         <a-row :gutter="16">
@@ -538,10 +543,10 @@
           <a-col :span="12">
             <a-form-item label="執業有效期">
               <span>{{
-                detailForm.professionValidityStart && detailForm.professionValidityEnd
-                  ? detailForm.professionValidityStart + ' 至 ' + detailForm.professionValidityEnd
-                  : '-'
-              }}</span>
+                  detailForm.professionValidityStart && detailForm.professionValidityEnd
+                      ? detailForm.professionValidityStart + ' 至 ' + detailForm.professionValidityEnd
+                      : '-'
+                }}</span>
             </a-form-item>
           </a-col>
         </a-row>
@@ -845,16 +850,15 @@ const createPhotoUploader = (form) => {
       formData.append("file", file);
       formData.append("serialNumber", form.phone || "");
       const res = await axios.post(
-        "https://hqgy.gzxinxingyiyuan.com/filedec/file/upload",
-        formData,
-        {headers: {"Content-Type": "multipart/form-data"}},
+          "https://hqgy.gzxinxingyiyuan.com/filedec/file/upload",
+          formData,
+          {headers: {"Content-Type": "multipart/form-data"}},
       );
       const imageUrl = res.data.data.data;
-      form.doctorPhotoFileList = [
-        {uid: file.uid, name: file.name, status: "done", url: imageUrl},
-      ];
+      file.url = imageUrl;
+      file.thumbUrl = imageUrl;
+      onSuccess({url: imageUrl});
       message.success("上傳成功");
-      onSuccess(res.data);
     } catch (error) {
       message.error("上傳失敗");
       onError(error);
@@ -923,14 +927,14 @@ const handleLoginAccountChange = (value) => {
 
 const handleHospitalChange = (value) => {
   selectedHospital.value = value
-    ? menzhenlist.value.find((item) => item.hospitalName === value)
-    : null;
+      ? menzhenlist.value.find((item) => item.hospitalName === value)
+      : null;
 };
 
 const handleEditHospitalChange = (value) => {
   selectedEditHospital.value = value
-    ? menzhenlist.value.find((item) => item.hospitalName === value)
-    : null;
+      ? menzhenlist.value.find((item) => item.hospitalName === value)
+      : null;
 };
 
 const resetAddForm = () => {
@@ -996,11 +1000,11 @@ const editRecord = async (record) => {
         editForm.professionValidity = [];
       }
       editForm.esignature = data.esignature
-        ? [{uid: "-1", name: "esignature.png", status: "done", url: data.esignature}]
-        : [];
+          ? [{uid: "-1", name: "esignature.png", status: "done", url: data.esignature}]
+          : [];
       editForm.doctorPhotoFileList = data.doctorPhoto
-        ? [{uid: "-2", name: "doctorPhoto.png", status: "done", url: data.doctorPhoto}]
-        : [];
+          ? [{uid: "-2", name: "doctorPhoto.png", status: "done", url: data.doctorPhoto}]
+          : [];
       if (data.hospital) {
         selectedEditHospital.value = menzhenlist.value.find((item) => item.hospitalName === data.hospital);
       }
@@ -1196,15 +1200,15 @@ const handleEditSubmit = async () => {
       email: editForm.email,
       enPro: editForm.englishSpecialty,
       channelTag: editForm.channelTag,
-      doctorPhoto: editForm.doctorPhotoFileList[0]?.thumbUrl || editForm.doctorPhotoFileList[0]?.url || "",
+      doctorPhoto: editForm.doctorPhotoFileList[0]?.url || "",
       position: editForm.position,
       practiceScope: editForm.practiceScope,
       multiPractice: editForm.multiPractice,
       professionValidityStart: editForm.professionValidity?.[0] || "",
       professionValidityEnd: editForm.professionValidity?.[1] || "",
       orgId: editForm.orgId?.length
-        ? editForm.orgId[editForm.orgId.length - 1]
-        : originalData?.orgId || "",
+          ? editForm.orgId[editForm.orgId.length - 1]
+          : originalData?.orgId || "",
     };
     const res = await selectDoctorupdateDoctor(params);
     if (res.code === "200" && res.data.message === "修改成功") {

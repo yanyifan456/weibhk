@@ -282,3 +282,12 @@ export const selectUserDetail = (params) =>
   request.post("/mini/user/selectUserDetail", params);
 export const updateMedicationReceipt = (params) =>
   request.post("/acceptexpenditure/updateMedicationReceipt", params);
+
+export const getReceiptList = (params) =>
+  request.post("/receipt/getReceiptList", params);
+export const getDrugReceiptDetail = (params) =>
+  request.post("/receipt/getDrugReceiptDetail", params);
+export const getOrderReceiptDetail = (params) =>
+  request.post("/receipt/getOrderReceiptDetail", params);
+export const listDosageForm = (params) =>
+  request.post("/acceptmidorderuser/listDosageForm", params);

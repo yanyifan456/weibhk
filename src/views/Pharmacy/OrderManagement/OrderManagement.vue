@@ -334,7 +334,8 @@
                             <div style="font-size: 18px; font-weight: bold;">HKD {{ receiptData.tradeFee || '15' }}
                             </div>
                             <div style="display: flex;"> <img style="width: 120px; height: auto;"
-                                    src="../../../assets/img/13.jpg" alt="">
+                                    src="https://hqgy.gzxinxingyiyuan.com/orglogo/xxgz_20260608152737e7aa746304174167a3b747ab88e2cac6.jpg"
+                                    alt="">
                                 <div style="font-size: 12px; color: #666;">廣州南沙信興互聯網醫院<br />（蓋財務章/公章）</div>
                             </div>
 
@@ -626,8 +627,8 @@
                             <a-checkbox :checked="drugFeeReceiptData.paymentMethod === 'wechat'" disabled>WeChat
                                 Pay微信支付</a-checkbox>
                         </div>
-                        <img src="../../../assets/img/14.png" alt="logo"
-                            style="width: 100px;margin-left: 0px;margin-top: -180px;" />
+                        <img src="https://hqgy.gzxinxingyiyuan.com/orglogo/xxgz2_2026060815280186e82ff0e07b4b74869acec45c522e69.png"
+                            alt="logo" style="width: 100px;margin-left: 0px;margin-top: -180px;" />
                     </div>
 
                     <hr style="border: none; border-top: 1px solid #d9d9d9; margin: 16px 0;" />

@@ -24,8 +24,7 @@
     <a-card>
       <div class="table-wrapper">
         <a-table :columns="columns" :data-source="tableData" :pagination="pagination" row-key="id"
-                 :scroll="{ x: 1600, y: 470 }" bordered class="patient-table" @change="handleTableChange"
-                 :loading="loading">
+          :scroll="{ x: 1600, y: 470 }" bordered class="patient-table" @change="handleTableChange" :loading="loading">
 
           <template #bodyCell="{ column, record }">
             <!-- 操作列 -->
@@ -35,8 +34,7 @@
                   修改
                 </a-button>
 
-                <a-popconfirm title="确定删除吗?" ok-text="是" cancel-text="否"
-                              @confirm="handleDelete(record)">
+                <a-popconfirm title="确定删除吗?" ok-text="是" cancel-text="否" @confirm="handleDelete(record)">
                   <!-- @click="handleDelete(record)" -->
                   <a-button type="link" size="small" danger>
                     刪除
@@ -52,32 +50,31 @@
 
     <!-- 機構修改彈窗 -->
     <a-modal v-model:open="editModalVisible" :z-index="1010" title="修改機構" @ok="handleEditSubmit"
-             @cancel="handleEditCancel">
+      @cancel="handleEditCancel">
       <a-form :model="editForm" layout="vertical">
         <a-form-item label="機構名稱" required>
-          <a-input v-model:value="editForm.name" placeholder="請輸入機構名稱"/>
+          <a-input v-model:value="editForm.name" placeholder="請輸入機構名稱" />
         </a-form-item>
         <a-form-item label="部門編碼" required>
-          <a-input v-model:value="editForm.deptCode" placeholder="請輸入部門編碼"/>
+          <a-input v-model:value="editForm.deptCode" placeholder="請輸入部門編碼" />
         </a-form-item>
         <a-form-item label="顯示順序">
-          <a-input-number v-model:value="editForm.showOrder" placeholder="請輸入顯示順序" style="width: 100%;"
-                          :min="0"/>
+          <a-input-number v-model:value="editForm.showOrder" placeholder="請輸入顯示順序" style="width: 100%;" :min="0" />
         </a-form-item>
         <a-form-item label="機構地址" required>
-          <a-input v-model:value="editForm.deptAddress" placeholder="請輸入機構地址"/>
+          <a-input v-model:value="editForm.deptAddress" placeholder="請輸入機構地址" />
         </a-form-item>
         <a-form-item label="機構電話" required>
-          <a-input v-model:value="editForm.deptTel" placeholder="請輸入機構電話"/>
+          <a-input v-model:value="editForm.deptTel" placeholder="請輸入機構電話" />
         </a-form-item>
 
         <!-- Logo 上传 -->
         <a-form-item label="機構 Logo" required>
           <a-upload list-type="picture-card" :max-count="1" :before-upload="beforeUpload"
-                    :custom-request="handleEditLogoCustomRequest" :file-list="editLogoFileList"
-                    @change="handleEditLogoChange" accept="image/png,image/jpeg,image/jpg">
+            :custom-request="handleEditLogoCustomRequest" :file-list="editLogoFileList" @change="handleEditLogoChange"
+            accept="image/png,image/jpeg,image/jpg">
             <div v-if="!editLogoUrl && !editLogoFile">
-              <upload-outlined/>
+              <upload-outlined />
               <div style="margin-top: 8px">上傳 Logo</div>
             </div>
           </a-upload>
@@ -88,31 +85,30 @@
 
     <!-- 機構新增彈窗 -->
     <a-modal v-model:open="addModalVisible" :z-index="1010" title="新增機構" @ok="handleAddSubmit" destroyOnClose
-             @cancel="handleAddCancel">
+      @cancel="handleAddCancel">
       <a-form :model="addForm" layout="vertical">
         <a-form-item label="機構名稱" required>
-          <a-input v-model:value="addForm.name" placeholder="請輸入機構名稱"/>
+          <a-input v-model:value="addForm.name" placeholder="請輸入機構名稱" />
         </a-form-item>
         <a-form-item label="機構編碼" required>
-          <a-input v-model:value="addForm.deptCode" placeholder="請輸入機構編碼"/>
+          <a-input v-model:value="addForm.deptCode" placeholder="請輸入機構編碼" />
         </a-form-item>
         <a-form-item label="顯示順序">
-          <a-input-number v-model:value="addForm.showOrder" placeholder="請輸入顯示順序" style="width: 100%;"
-                          :min="0"/>
+          <a-input-number v-model:value="addForm.showOrder" placeholder="請輸入顯示順序" style="width: 100%;" :min="0" />
         </a-form-item>
         <a-form-item label="機構地址" required>
-          <a-input v-model:value="addForm.deptAddress" placeholder="請輸入機構地址"/>
+          <a-input v-model:value="addForm.deptAddress" placeholder="請輸入機構地址" />
         </a-form-item>
         <a-form-item label="機構電話" required>
-          <a-input v-model:value="addForm.deptTel" placeholder="請輸入機構電話"/>
+          <a-input v-model:value="addForm.deptTel" placeholder="請輸入機構電話" />
         </a-form-item>
         <!-- Logo 上传 -->
         <a-form-item label="機構 Logo" required>
           <a-upload list-type="picture-card" :max-count="1" :before-upload="beforeUpload"
-                    :custom-request="handleAddLogoCustomRequest" :file-list="addLogoFileList"
-                    @change="handleAddLogoChange" accept="image/png,image/jpeg,image/jpg">
+            :custom-request="handleAddLogoCustomRequest" :file-list="addLogoFileList" @change="handleAddLogoChange"
+            accept="image/png,image/jpeg,image/jpg">
             <div v-if="!addLogoUrl && !addLogoFile">
-              <upload-outlined/>
+              <upload-outlined />
               <div style="margin-top: 8px">上傳 Logo</div>
             </div>
           </a-upload>
@@ -122,20 +118,19 @@
     </a-modal>
 
     <!-- 機構樹編輯彈窗 -->
-    <a-modal v-model:open="orgTreeModalVisible" title="機構樹編輯" width="600px" @cancel="handleOrgTreeCancel"
-             destroyOnClose
-             @ok="handleOrgTreeSubmit">
+    <a-modal v-model:open="orgTreeModalVisible" title="機構樹編輯" width="600px" @cancel="handleOrgTreeCancel" destroyOnClose
+      @ok="handleOrgTreeSubmit">
       <a-spin :spinning="orgTreeLoading">
         <div v-if="orgTreeData.length === 0 && !orgTreeLoading" style="text-align: center; padding: 40px;">
           暫無機構數據
         </div>
         <div v-else>
           <a-tree v-model:expandedKeys="expandedKeys" :tree-data="orgTreeData" :default-expand-all="true"
-                  :field-names="{ title: 'label', key: 'id', children: 'children' }">
+            :field-names="{ title: 'label', key: 'id', children: 'children' }">
             <template #title="nodeData">
-                            <span>
-                                {{ nodeData.label || '' }}
-                              <!-- <a-button type="link" size="small" style="margin-left: 8px;"
+              <span>
+                {{ nodeData.label || '' }}
+                <!-- <a-button type="link" size="small" style="margin-left: 8px;"
                                   @click.stop="handleEditOrg(nodeData)">
                                   修改
                               </a-button>
@@ -143,11 +138,10 @@
                                   @click.stop="handleDeleteOrg(nodeData)">
                                   刪除
                               </a-button> -->
-                                <a-button type="link" size="small" style="margin-left: 8px;"
-                                          @click.stop="handleAddOrg(nodeData)">
-                                    新增
-                                </a-button>
-                            </span>
+                <a-button type="link" size="small" style="margin-left: 8px;" @click.stop="handleAddOrg(nodeData)">
+                  新增
+                </a-button>
+              </span>
             </template>
           </a-tree>
         </div>
@@ -158,14 +152,14 @@
 </template>
 
 <script setup>
-import {ref, reactive, computed, onMounted} from "vue";
-import {message} from "ant-design-vue";
-import {useI18n} from "vue-i18n";
-import {UploadOutlined} from '@ant-design/icons-vue';
-import {selectOrg, buildTree, updateOrg, addOrg} from "@/api/yyf.js";
+import { ref, reactive, computed, onMounted } from "vue";
+import { message } from "ant-design-vue";
+import { useI18n } from "vue-i18n";
+import { UploadOutlined } from '@ant-design/icons-vue';
+import { selectOrg, buildTree, updateOrg, addOrg } from "@/api/yyf.js";
 import axios from "axios";
 
-const {t} = useI18n();
+const { t } = useI18n();
 
 // 创建不带 Authorization 头的上传专用 axios 实例
 const uploadRequest = axios.create({
@@ -194,11 +188,11 @@ const pagination = reactive({
 
 // 列定義
 const columns = computed(() => [
-  {title: "機構ID", dataIndex: "id", key: "id", align: "center", width: 100},
-  {title: "機構名稱", dataIndex: "name", key: "name", align: "center", width: 200},
-  {title: "父部門名稱", dataIndex: "parentName", key: "parentName", align: "center", width: 150},
-  {title: "顯示順序", dataIndex: "showOrder", key: "showOrder", align: "center", width: 150},
-  {title: "操作", key: "action", align: "center", width: 150, fixed: "right"},
+  { title: "機構ID", dataIndex: "id", key: "id", align: "center", width: 100 },
+  { title: "機構名稱", dataIndex: "name", key: "name", align: "center", width: 200 },
+  { title: "父部門名稱", dataIndex: "parentName", key: "parentName", align: "center", width: 150 },
+  { title: "顯示順序", dataIndex: "showOrder", key: "showOrder", align: "center", width: 150 },
+  { title: "操作", key: "action", align: "center", width: 150, fixed: "right" },
 ]);
 
 // 獲取表格數據
@@ -265,7 +259,7 @@ const beforeUpload = (file) => {
 
 // 编辑弹窗 - 自定义上传请求
 const handleEditLogoCustomRequest = async (options) => {
-  const {file, onSuccess, onError} = options;
+  const { file, onSuccess, onError } = options;
 
   try {
     // 构建 FormData
@@ -374,14 +368,14 @@ const handleEditLogoChange = (info) => {
 // 编辑弹窗 - 文件列表（计算属性）
 const editLogoFileList = computed(() => {
   if (editLogoUrl.value) {
-    return [{uid: '-1', name: 'logo.png', status: 'done', url: editLogoUrl.value}];
+    return [{ uid: '-1', name: 'logo.png', status: 'done', url: editLogoUrl.value }];
   }
   return [];
 });
 
 // 新增弹窗 - 自定义上传请求（与编辑保持一致）
 const handleAddLogoCustomRequest = async (options) => {
-  const {file, onSuccess, onError} = options;
+  const { file, onSuccess, onError } = options;
 
   try {
     // 构建 FormData
@@ -447,7 +441,7 @@ const handleAddLogoChange = (info) => {
 // 新增弹窗 - 文件列表（计算属性）
 const addLogoFileList = computed(() => {
   if (addLogoUrl.value) {
-    return [{uid: '-1', name: 'logo.png', status: 'done', url: addLogoUrl.value}];
+    return [{ uid: '-1', name: 'logo.png', status: 'done', url: addLogoUrl.value }];
   }
   return [];
 });
@@ -553,7 +547,7 @@ const expandedKeys = ref([]);
 const showOrgTreeModal = async () => {
   orgTreeLoading.value = true;
   try {
-    const params = {orgId: 1};
+    const params = { orgId: 1 };
     const res = await buildTree(params);
     if (res.code === "200") {
       orgTreeData.value = res.data || [];

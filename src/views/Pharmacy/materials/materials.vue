@@ -147,7 +147,7 @@
                                         allow-clear>
                                         <a-select-option value="处方药">{{ t('medicine.prescription') }}</a-select-option>
                                         <a-select-option value="非处方药">{{ t('medicine.nonPrescription')
-                                        }}</a-select-option>
+                                            }}</a-select-option>
                                     </a-select>
                                 </a-form-item>
                             </a-col>
@@ -223,6 +223,32 @@
                             </a-col>
                         </a-row>
 
+                        <a-row :gutter="16">
+                            <a-col :span="12">
+                                <a-form-item label="剂型" name="dosageForm">
+                                    <a-select v-model:value="formData.dosageForm" placeholder="请选择剂型" allowClear>
+                                        <a-select-option v-for="item in dosageFormList" :key="item.id"
+                                            :value="item.formCode">
+                                            {{ item.formName }}
+                                        </a-select-option>
+                                    </a-select>
+                                </a-form-item>
+                            </a-col>
+                            <a-col :span="12">
+                                <a-form-item label="英文名" name="enName">
+                                    <a-input v-model:value="formData.enName" placeholder="请输入英文名" />
+                                </a-form-item>
+                            </a-col>
+                        </a-row>
+
+                        <a-row :gutter="16">
+                            <a-col :span="12">
+                                <a-form-item label="最小包装" name="minPackage">
+                                    <a-input v-model:value="formData.minPackage" placeholder="请输入最小包装" />
+                                </a-form-item>
+                            </a-col>
+                        </a-row>
+
                         <a-form-item :label="t('medicine.medicineDesc')" name="medicineDesc" :label-col="{ span: 3 }"
                             :wrapper-col="{ span: 21 }">
                             <a-textarea v-model:value="formData.medicineDesc"
@@ -242,7 +268,7 @@ import { message, Empty } from "ant-design-vue";
 import { PlusOutlined } from '@ant-design/icons-vue';
 import { useI18n } from "vue-i18n";
 import dayjs from "dayjs";
-import { getDrugLabel, getsupplier, getIntensityUnit, getDrugType, getunit, getUsage, getTimes, getDays, getReuseRemark, getAdvice, selectPharmacyList } from "@/api/yyf.js";
+import { getDrugLabel, getsupplier, getIntensityUnit, getDrugType, getunit, getUsage, getTimes, getDays, getReuseRemark, getAdvice, selectPharmacyList, listDosageForm } from "@/api/yyf.js";
 import { selectMedicineList, selectMedicineListup, selectMedicineListDetail, selectMedicineListdel, selectMedicineListadd, exportMedicine, insertMedicine, updateMedicine, selectMedicineTypeList } from "@/api/yyf.js";
 
 const { t } = useI18n();
@@ -262,6 +288,7 @@ const reuseRemarkList = ref([]);
 const adviceList = ref([]);
 const pharmacyList = ref([]); // 药房列表
 const medicineTypeList = ref([])
+const dosageFormList = ref([]); // 剂型列表
 // 图片上传相关
 const photoFileList = ref([]);
 const uploadedFile = ref(null); // 存储上传的文件对象
@@ -293,6 +320,9 @@ const formRules = computed(() => ({
     precautions: [{ required: true, message: t('medicine.enterPrecautions'), trigger: 'blur' }],
     drugLotNumber: [{ required: true, message: t('medicine.enterDrugLotNumber'), trigger: 'blur' }],
     signetur: [{ required: true, message: t('medicine.signeturs'), trigger: 'blur' }],
+    dosageForm: [{ required: true, message: '请选择剂型', trigger: 'change' }],
+    enName: [{ required: true, message: '请输入英文名', trigger: 'blur' }],
+    minPackage: [{ required: true, message: '请输入最小包装', trigger: 'blur' }],
     medicineDesc: [{ required: true, message: t('medicine.enterMedicineDesc'), trigger: 'blur' }],
     photo: [
         {
@@ -504,6 +534,9 @@ const formData = reactive({
     photo: "",             // 药片图片
     drugLotNumber: "",
     signetur: "",   // 批次号
+    dosageForm: null,      // 剂型（存 formCode）
+    enName: "",            // 英文名
+    minPackage: "",        // 最小包装
     // 状态选项
     medicalSolution: false,
     isDangerous: false,
@@ -582,6 +615,9 @@ const showAddModal = () => {
         photo: "",
         drugLotNumber: "",
         signetur: "",
+        dosageForm: null,
+        enName: "",
+        minPackage: "",
         medicalSolution: false,
         isDangerous: false,
         noLinjectableMedicineabel: false,
@@ -657,6 +693,14 @@ const editRecord = async (record) => {
                 photo: detailData.photo || "",
                 drugLotNumber: detailData.drugLotNumber || "",
                 signetur: detailData.signetur || "",
+                dosageForm: (() => {
+                    const formName = detailData.dosageForm;
+                    if (!formName) return null;
+                    const matched = dosageFormList.value.find(item => item.formName === formName);
+                    return matched ? matched.formCode : formName;
+                })(),
+                enName: detailData.enName || "",
+                minPackage: detailData.minPackage || "",
                 medicalSolution: detailData.medicalSolution === "1" || detailData.medicalSolution === "true" || detailData.medicalSolution === true,
                 isDangerous: detailData.hazardous === "1" || detailData.hazardous === "true" || detailData.hazardous === true,
                 noLinjectableMedicineabel: detailData.injectableMedicine === "1" || detailData.injectableMedicine === "true" || detailData.injectableMedicine === true,
@@ -728,7 +772,10 @@ const submitForm = async () => {
             precautions: formData.precautions || "",
             validDate: formData.validDate ? dayjs(formData.validDate).format('YYYY-MM-DD') : "",
             drugLotNumber: formData.drugLotNumber || "",
-            signetur: formData.signetur
+            signetur: formData.signetur,
+            dosageForm: formData.dosageForm || "",
+            enName: formData.enName || "",
+            minPackage: formData.minPackage || ""
         };
 
         // 编辑时添加id
@@ -834,7 +881,13 @@ const getMedicineTypeName = (typeId) => {
     const type = medicineTypeList.value.find(item => item.typeId === String(typeId));
     return type ? type.typeName : typeId;
 };
-
+const listDosageForms = async () => {
+    const res = await listDosageForm({});
+    if (res.code === '200' || res.code === 200) {
+        dosageFormList.value = res.data.data || [];
+    }
+};
+listDosageForms()
 </script>
 <style scoped lang="scss">
 .search-form {
