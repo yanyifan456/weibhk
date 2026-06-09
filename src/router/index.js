@@ -26,7 +26,7 @@ const routes = [
       requiresAuth: false,
       icon: "https://www.gzxinxingyiyuan.com/images/image/1.png",
     },
-    component: () => import("@/views/Home/Home.vue"),
+    component: () => import("@/views/home/home.vue"),
   },
   {
     path: "/register",
