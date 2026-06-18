@@ -298,8 +298,8 @@ defineExpose({ clearSubtitles, connectSubtitleWs, disconnectSubtitleWs });
 }
 
 .lang-btn.active {
-    background: #1677ff;
-    border-color: #1677ff;
+    background: #1A6B8A;
+    border-color: #1A6B8A;
     color: #fff;
 }
 

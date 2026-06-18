@@ -299,7 +299,7 @@ const open = () => {
     .login-btn {
       height: 52px;
       border-radius: 12px;
-      background: #4892fe;
+      background: #1A6B8A;
       border: none;
       font-size: 16px;
       font-weight: 500;
@@ -325,7 +325,7 @@ const open = () => {
 }
 
 .icp-number:hover {
-  color: #1890ff;
+  color: #1A6B8A;
   /* 悬停时颜色，比如 Ant Design 蓝色 */
 }
 </style>

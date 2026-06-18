@@ -26,12 +26,12 @@
       @change="changePage">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'orderuserid'">
-          <a style="color: #1890ff; cursor: pointer;" @click="showUserCaseModal(record)">
+          <a style="color: #1A6B8A; cursor: pointer;" @click="showUserCaseModal(record)">
             点击查看
           </a>
         </template>
         <template v-else-if="column.key === 'username'">
-          <a @click="showUserDetailModal(record)" style="color: #1890ff; cursor: pointer;">
+          <a @click="showUserDetailModal(record)" style="color: #1A6B8A; cursor: pointer;">
             {{ record.username }}
           </a>
         </template>
@@ -417,7 +417,7 @@
           </div>
         </a-upload>
         <PrescriptionUploadTips />
-        <div v-if="wpImgUpload.uploading.value" style="color: #1890ff; margin-top: 8px; font-size: 13px;">图片上传中...</div>
+        <div v-if="wpImgUpload.uploading.value" style="color: #1A6B8A; margin-top: 8px; font-size: 13px;">图片上传中...</div>
         <div v-if="wpImgUpload.uploadedUrl.value && !wpImgUpload.uploading.value"
           style="color: #52c41a; margin-top: 8px; font-size: 13px;">图片上传成功</div>
         <div v-if="wpImgUpload.uploadError.value" style="color: #ff4d4f; margin-top: 8px; font-size: 13px;">{{
@@ -645,7 +645,7 @@
                   </div>
                 </a-upload>
                 <PrescriptionUploadTips style="margin-top: 8px;" />
-                <div v-if="epUpload.uploading.value" style="color: #1890ff; margin-top: 8px; font-size: 13px;">图片上传中...
+                <div v-if="epUpload.uploading.value" style="color: #1A6B8A; margin-top: 8px; font-size: 13px;">图片上传中...
                 </div>
                 <div v-if="epUpload.uploadedUrl.value && !epUpload.uploading.value"
                   style="color: #52c41a; margin-top: 8px; font-size: 13px;">图片上传成功</div>

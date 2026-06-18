@@ -34,6 +34,6 @@ const open = () => {
   cursor: pointer;
 }
 .icp-number:hover{
-  color: #1890ff;
+  color: #1A6B8A;
 }
 </style>

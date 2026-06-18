@@ -2,13 +2,13 @@
   <div class="tabs-container" v-if="showTabs">
     <div class="tabs-wrapper">
       <!-- 首页 tab -->
-      <a-tag :color="isActive('/home') ? 'blue' : 'default'" class="tab-tag home-tag" @click="handleTabClick('/home')">
+      <a-tag :color="isActive('/home') ? '#1A6B8A' : 'default'" class="tab-tag home-tag" @click="handleTabClick('/home')">
         <home-outlined />
         <span class="tab-title">{{ $t('menu.home') }}</span>
       </a-tag>
 
       <!-- 其他 tabs -->
-      <a-tag v-for="tab in tabsStore.tabsList" :key="tab.path" :color="isActive(tab.path) ? 'blue' : 'default'"
+      <a-tag v-for="tab in tabsStore.tabsList" :key="tab.path" :color="isActive(tab.path) ? '#1A6B8A' : 'default'"
         :closable="true" class="tab-tag" @click="handleTabClick(tab.path)" @close="handleTabRemove(tab.path)">
         <span class="tab-title">{{ $t(tab.title) }}</span>
       </a-tag>

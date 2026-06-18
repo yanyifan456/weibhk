@@ -23,12 +23,12 @@
                     </a>
                 </template>
                 <template v-else-if="column.key === 'prescription'">
-                    <a @click="showPrescriptionModal(record)" style="color: #1890ff; cursor: pointer;">
+                    <a @click="showPrescriptionModal(record)" style="color: #1A6B8A; cursor: pointer;">
                         {{ record.consultationId }}
                     </a>
                 </template>
                 <template v-else-if="column.key === 'dispensing'">
-                    <a @click="showDispensingModal(record)" style="color: #1890ff; cursor: pointer;">
+                    <a @click="showDispensingModal(record)" style="color: #1A6B8A; cursor: pointer;">
                         {{ record.consultationId }}
                     </a>
                 </template>

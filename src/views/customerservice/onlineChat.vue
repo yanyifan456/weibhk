@@ -570,14 +570,14 @@ body {
 
 .user-item.active {
     background: #e6f7ff;
-    border-right: 3px solid #1890ff;
+    border-right: 3px solid #1A6B8A;
 }
 
 .user-avatar {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: #1890ff;
+    background: #1A6B8A;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -710,7 +710,7 @@ body {
 }
 
 .msg-avatar-user {
-    background: #1890ff;
+    background: #1A6B8A;
 }
 
 .msg-avatar-service {
@@ -761,7 +761,7 @@ body {
 }
 
 .input-area textarea:focus {
-    border-color: #1890ff;
+    border-color: #1A6B8A;
     box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
 }
 

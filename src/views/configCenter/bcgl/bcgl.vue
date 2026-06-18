@@ -385,7 +385,7 @@ onMounted(() => {
         padding: 8px;
 
         &:hover {
-            color: #1890ff;
+            color: #1A6B8A;
         }
     }
 
@@ -408,11 +408,11 @@ onMounted(() => {
         }
 
         &-active {
-            background: #1890ff;
+            background: #1A6B8A;
             color: #fff;
 
             &:hover {
-                background: #1890ff;
+                background: #1A6B8A;
             }
 
             .week-day-name,
@@ -459,7 +459,7 @@ onMounted(() => {
         }
 
         &-active {
-            background: #1890ff;
+            background: #1A6B8A;
         }
     }
 }
@@ -482,16 +482,16 @@ onMounted(() => {
         transition: all 0.3s;
 
         &:hover {
-            border-color: #1890ff;
+            border-color: #1A6B8A;
         }
 
         &-active {
-            background: #1890ff;
+            background: #1A6B8A;
             color: #fff;
-            border-color: #1890ff;
+            border-color: #1A6B8A;
 
             &:hover {
-                background: #40a9ff;
+                background: #2a7e9e;
             }
         }
     }

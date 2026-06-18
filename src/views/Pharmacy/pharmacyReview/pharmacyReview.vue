@@ -23,17 +23,17 @@
           </a>
         </template>
         <template v-if="column.key === 'orderuserid'">
-          <a style="color: #1890ff; cursor: pointer;" @click="showUserCaseModal(record)">
+          <a style="color: #1A6B8A; cursor: pointer;" @click="showUserCaseModal(record)">
             点击查看
           </a>
         </template>
         <template v-else-if="column.key === 'userName'">
-          <a @click="showUserDetailModal(record)" style="color: #1890ff; cursor: pointer;">
+          <a @click="showUserDetailModal(record)" style="color: #1A6B8A; cursor: pointer;">
             {{ record.userName }}
           </a>
         </template>
         <template v-else-if="column.key === 'prescription'">
-          <a @click="showPrescriptionModal(record)" style="color: #1890ff; cursor: pointer;">
+          <a @click="showPrescriptionModal(record)" style="color: #1A6B8A; cursor: pointer;">
             {{ record.consultationId }}
           </a>
         </template>

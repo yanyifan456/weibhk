@@ -438,7 +438,7 @@ const huanzhe = () => {
 
       &.status-paid {
         background: #e6f7ff;
-        color: #1890ff;
+        color: #1A6B8A;
       }
     }
 

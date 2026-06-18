@@ -949,7 +949,7 @@ listDosageForms()
 }
 
 .table-summary .num {
-    color: #1677ff;
+    color: #1A6B8A;
     font-weight: 600;
 }
 
