@@ -247,6 +247,11 @@
                                     <a-input v-model:value="formData.minPackage" placeholder="请输入最小包装" />
                                 </a-form-item>
                             </a-col>
+                            <a-col :span="12">
+                                <a-form-item label="单位" name="unit">
+                                    <a-input v-model:value="formData.unit" placeholder="请输入单位" />
+                                </a-form-item>
+                            </a-col>
                         </a-row>
 
                         <a-form-item :label="t('medicine.medicineDesc')" name="medicineDesc" :label-col="{ span: 3 }"
@@ -323,6 +328,7 @@ const formRules = computed(() => ({
     dosageForm: [{ required: true, message: '请选择剂型', trigger: 'change' }],
     enName: [{ required: true, message: '请输入英文名', trigger: 'blur' }],
     minPackage: [{ required: true, message: '请输入最小包装', trigger: 'blur' }],
+    unit: [{ required: true, message: '请输入单位', trigger: 'blur' }],
     medicineDesc: [{ required: true, message: t('medicine.enterMedicineDesc'), trigger: 'blur' }],
     photo: [
         {
@@ -362,6 +368,7 @@ const columns = computed(() => [
     { title: t("medicine.precautions"), dataIndex: "precautions", key: "precautions", align: "center", width: 150, ellipsis: true, },
     { title: t("medicine.drugLotNumber"), dataIndex: "drugLotNumber", key: "drugLotNumber", align: "center", width: 120, ellipsis: true, },
     { title: t("medicine.signetur"), dataIndex: "signetur", key: "signetur", align: "center", width: 150, ellipsis: true, },
+    { title: "单位", dataIndex: "unit", key: "unit", align: "center", width: 80, ellipsis: true, },
     { title: t("medicine.validDate"), dataIndex: "validDate", key: "validDate", align: "center", width: 120, ellipsis: true, },
     { title: t("label.aa"), dataIndex: "createTime", key: "createTime", align: "center", width: 180, ellipsis: true, },
     { title: t("button.shenhe"), key: "action", align: "center", width: 150, fixed: 'right' },
@@ -537,6 +544,7 @@ const formData = reactive({
     dosageForm: null,      // 剂型（存 formCode）
     enName: "",            // 英文名
     minPackage: "",        // 最小包装
+    unit: "",              // 单位
     // 状态选项
     medicalSolution: false,
     isDangerous: false,
@@ -618,6 +626,7 @@ const showAddModal = () => {
         dosageForm: null,
         enName: "",
         minPackage: "",
+        unit: "",
         medicalSolution: false,
         isDangerous: false,
         noLinjectableMedicineabel: false,
@@ -701,6 +710,7 @@ const editRecord = async (record) => {
                 })(),
                 enName: detailData.enName || "",
                 minPackage: detailData.minPackage || "",
+                unit: detailData.unit || "",
                 medicalSolution: detailData.medicalSolution === "1" || detailData.medicalSolution === "true" || detailData.medicalSolution === true,
                 isDangerous: detailData.hazardous === "1" || detailData.hazardous === "true" || detailData.hazardous === true,
                 noLinjectableMedicineabel: detailData.injectableMedicine === "1" || detailData.injectableMedicine === "true" || detailData.injectableMedicine === true,
@@ -775,7 +785,8 @@ const submitForm = async () => {
             signetur: formData.signetur,
             dosageForm: formData.dosageForm || "",
             enName: formData.enName || "",
-            minPackage: formData.minPackage || ""
+            minPackage: formData.minPackage || "",
+            unit: formData.unit || ""
         };
 
         // 编辑时添加id

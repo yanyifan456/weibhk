@@ -121,28 +121,28 @@
                 <tr>
                     <th v-for="col in prescriptionTableHeaders" :key="col.en"
                         style="border: 1px solid ; padding: 4px 4px; text-align: center; white-space: nowrap; background: #fff;">
-                        {{ col.zh }}({{ col.en }})
+                        <div>{{ col.zh }}</div>
+                        {{ col.en }}
                     </th>
                 </tr>
             </thead>
             <tbody>
                 <template v-if="detail.medicines && detail.medicines.length > 0">
                     <tr v-for="(item, index) in detail.medicines" :key="index">
-                        <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ index + 1 }}</td>
-                        <td style="border: 1px solid ; padding: 6px;">{{ item.name || '' }}</td>
-                        <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.spec || '' }}</td>
-                        <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.dosageForm || ''
-                            }}</td>
-                        <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.directionsRoute ||
+
+                        <td style="border: 1px solid ; padding: 6px;">{{ item.medicineId || '' }}</td>
+
+                        <td style="border: 1px solid ; padding: 6px;">{{ item.drugDetails || '' }}</td>
+                        <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.uom || ''
+                        }}</td>
+                        <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.dosageDirections ||
                             '' }}</td>
-                        <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.frenquency || ''
-                            }}</td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.duration || '' }}
                         </td>
                         <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.medicineCun || ''
-                            }}</td>
-                        <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.specialPurpose ||
-                            '' }}</td>
+                        }}</td>
+                        <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.unit || '' }}</td>
+
                     </tr>
                 </template>
 
@@ -203,17 +203,14 @@ watch(
 )
 /** 处方表格列头 */
 const prescriptionTableHeaders = [
-    { zh: '項目', en: 'Item' },
-    { zh: '藥物名稱', en: 'Drug name' },
-    { zh: '劑量', en: 'Strength' },
-    { zh: '劑型', en: 'Dosage form' },
-    { zh: '用法／途徑', en: 'Directions / route' },
-    { zh: '頻次', en: 'Frequency' },
-    { zh: '療程', en: 'Duration' },
+    { zh: '藥品代碼', en: 'Code' },
+    { zh: '藥品名稱', en: 'Drug Details' },
+    { zh: '計量單位', en: 'UOM' },
+    { zh: '用法用量', en: 'Dosage and Directions' },
+    { zh: '持續時間（天）', en: 'Duration(Days)' },
     { zh: '數量', en: 'Quantity' },
-    { zh: '特殊用法', en: 'Route of Administration' },
+    { zh: '單位', en: 'Unit' },
 ];
-
 /** 保证至少显示 3 行空行 */
 const emptyRows = computed(() => {
     const filled = props.detail.medicines?.length || 0;

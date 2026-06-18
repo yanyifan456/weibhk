@@ -137,12 +137,14 @@
                         <template v-else>{{ column.title }}</template>
                     </template>
                     <template #bodyCell="{ column, record, index }">
-                        <template v-if="column.key === 'name'">
-                            <span>{{ record.name }}</span>
+                        <template v-if="column.key === 'medicineId'">
+                            <span>{{ record.medicineId }}</span>
                         </template>
-                        <template v-else-if="column.key === 'spec'">
-                            <span>{{ record.spec }}</span>
+
+                        <template v-else-if="column.key === 'drugDetails'">
+                            <span>{{ record.drugDetails }}</span>
                         </template>
+
                         <template v-else-if="column.key === 'medicineCun'">
                             <span>{{ record.medicineCun }}</span>
                         </template>
@@ -229,8 +231,8 @@
                         <a-col :span="6">
                             <a-form-item label="物流费用">
                                 <span style="color: red;">*</span>
-                                <a-input-number :value="currentAuditRecord?.logisticsFee" :min="0" :max="100000000" :precision="2"
-                                    placeholder="物流费用" style="width: 220px" disabled />
+                                <a-input-number :value="currentAuditRecord?.logisticsFee" :min="0" :max="100000000"
+                                    :precision="2" placeholder="物流费用" style="width: 220px" disabled />
                             </a-form-item>
                         </a-col>
                     </a-row>
@@ -286,35 +288,31 @@
                         <tr>
                             <th v-for="col in prescriptionTableHeaders" :key="col.en"
                                 style="border: 1px solid ; padding: 4px 4px; text-align: center; white-space: nowrap; background: #fff;">
-                                {{ col.zh }}({{ col.en }})
+                                <div>{{ col.zh }}</div>
+                                {{ col.en }}
                             </th>
                         </tr>
                     </thead>
                     <tbody>
                         <template v-if="checkDetail.medicines && checkDetail.medicines.length > 0">
                             <tr v-for="(item, index) in checkDetail.medicines" :key="index">
-                                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ index + 1 }}</td>
-                                <td style="border: 1px solid ; padding: 6px;">{{ item.name || '' }}</td>
-                                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.spec || '' }}
-                                </td>
-                                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.dosageForm ||
-                                    ''
-                                    }}</td>
+                                <td style="border: 1px solid ; padding: 6px;">{{ item.medicineId || '' }}</td>
+
+                                <td style="border: 1px solid ; padding: 6px;">{{ item.drugDetails || '' }}</td>
+                                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.uom || ''
+                                }}</td>
                                 <td style="border: 1px solid ; padding: 6px; text-align: center;">{{
-                                    item.directionsRoute ||
+                                    item.dosageDirections ||
                                     '' }}</td>
-                                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.frenquency ||
-                                    ''
-                                    }}</td>
                                 <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.duration || ''
-                                    }}
+                                }}
                                 </td>
                                 <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.medicineCun ||
                                     ''
-                                    }}</td>
-                                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.specialPurpose
-                                    ||
-                                    '' }}</td>
+                                }}</td>
+                                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.unit || '' }}
+                                </td>
+
                             </tr>
                         </template>
                     </tbody>
@@ -381,15 +379,13 @@ const props = defineProps({
 })
 
 const prescriptionTableHeaders = [
-    { zh: '項目', en: 'Item' },
-    { zh: '藥物名稱', en: 'Drug name' },
-    { zh: '劑量', en: 'Strength' },
-    { zh: '劑型', en: 'Dosage form' },
-    { zh: '用法／途徑', en: 'Directions / route' },
-    { zh: '頻次', en: 'Frequency' },
-    { zh: '療程', en: 'Duration' },
+    { zh: '藥品代碼', en: 'Code' },
+    { zh: '藥品名稱', en: 'Drug Details' },
+    { zh: '計量單位', en: 'UOM' },
+    { zh: '用法用量', en: 'Dosage and Directions' },
+    { zh: '持續時間（天）', en: 'Duration(Days)' },
     { zh: '數量', en: 'Quantity' },
-    { zh: '特殊用法', en: 'Route of Administration' },
+    { zh: '單位', en: 'Unit' },
 ];
 // 国际化
 const { t } = useI18n();
@@ -410,22 +406,22 @@ const quantity = ref(''); // 件数
 const volume = ref(''); // 体积 cm3
 const desName = ref(''); // 寄托物描述，最大200字符
 const medicineColumns = [
-    { title: "药品名称", dataIndex: "name", key: "name", align: "center", width: 250 },
-    { title: "规格", dataIndex: "spec", key: "spec", align: "center", width: 150 },
-    { title: "数量", dataIndex: "medicineCun", key: "medicineCun", align: "center", width: 80 },
-    { title: "单价", key: "price", align: "center", width: 220 },
-    { title: "总价", key: "totalPrice", align: "center", width: 80 },
-    { title: "行邮税号", key: "postalTaxNo", align: "center", width: 180 },
+    { title: "藥品代碼", dataIndex: "medicineId", key: "medicineId", align: "center", width: 120 },
+    { title: "藥品詳情", dataIndex: "drugDetails", key: "drugDetails", align: "center", width: 250 },
+    { title: "數量", dataIndex: "medicineCun", key: "medicineCun", align: "center", width: 80 },
+    { title: "單價", key: "price", align: "center", width: 220 },
+    { title: "總價", key: "totalPrice", align: "center", width: 80 },
+    { title: "行郵税號", key: "postalTaxNo", align: "center", width: 180 },
     { title: "商品英文名", key: "goodsEnName", align: "center", width: 180 },
-    { title: "海关编码", key: "hsCode", align: "center", width: 180 },
-    { title: "计量单位编码", key: "goodsQuantitiyUnitCode", align: "center", width: 180 },
-    { title: "原产地", key: "oriProductionField", align: "center", width: 180 },
-    { title: "原产地编码", key: "oriProductionFieldCode", align: "center", width: 180 },
-    { title: "规格型号", key: "specifications", align: "center", width: 200 },
-    { title: "材质", key: "material", align: "center", width: 150 },
+    { title: "海關編碼", key: "hsCode", align: "center", width: 180 },
+    { title: "計量單位編碼", key: "goodsQuantitiyUnitCode", align: "center", width: 180 },
+    { title: "原產地", key: "oriProductionField", align: "center", width: 180 },
+    { title: "原產地編碼", key: "oriProductionFieldCode", align: "center", width: 180 },
+    { title: "規格型號", key: "specifications", align: "center", width: 200 },
+    { title: "材質", key: "material", align: "center", width: 150 },
     { title: "品牌", key: "brand", align: "center", width: 150 },
-    { title: "行政费率%（含税）", key: "postalTaxRate", align: "center", width: 150 },
-    { title: "行政费用（含税）", key: "postalTaxFee", align: "center", width: 150 },
+    { title: "行政費率%（含税）", key: "postalTaxRate", align: "center", width: 150 },
+    { title: "行政費用（含税）", key: "postalTaxFee", align: "center", width: 150 },
 ];
 // 不通过审核-原因说明
 const rejectReasonModalVisible = ref(false);
@@ -716,8 +712,7 @@ const confirmMedicinePrice = async () => {
             const taxRate = parseFloat(item.postalTaxRate) || 0;
 
             return {
-                name: item.name,
-                spec: item.spec,
+                drugDetails: item.drugDetails || '',
                 medicineCun: item.medicineCun,
                 price: item.price,
                 totalPrice: (unitPrice * quantity).toFixed(2),
@@ -739,6 +734,9 @@ const confirmMedicinePrice = async () => {
                 directionsRoute: item.directionsRoute || '',
                 specialPurpose: item.specialPurpose || '',
                 medicineId: item.medicineId || '',
+                uom: item.uom || '',
+                dosageDirections: item.dosageDirections || '',
+                unit: item.unit || '',
             };
         });
 

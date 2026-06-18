@@ -279,6 +279,10 @@ const getList = async () => {
 
 const currentData = ref(null);
 const decryption = async (url) => {
+    // 如果不是 .enc 结尾则不进行解密，直接返回原 URL
+    if (!url || !url.toLowerCase().endsWith('.enc')) {
+        return url
+    }
     try {
         const res = await axios.get(
             'https://hqgy.gzxinxingyiyuan.com/filedec/file/desfile/download',

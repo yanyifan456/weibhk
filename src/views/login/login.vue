@@ -185,7 +185,7 @@ switch (prefix) {
     break;
   default:
     pageTitle.value = "信兴综合门诊部互联网医院系统";
-    roleType.value = "admin";
+    roleType.value = "pharmacist";
 }
 
 const open = () => {

@@ -155,10 +155,10 @@
               :medicine-pagination="consultationMed.medicinePagination"
               :selected-ids="consultationMed.selectedIds.value" :quantities="consultationMed.quantities"
               :extra-fields="consultationMed.extraFields" :manual-medicines="consultationMed.manualMedicines.value"
-              :search-form="consultationMed.searchForm" @search="consultationMed.handleSearch"
-              @table-change="consultationMed.handleTableChange" @toggle-select-all="consultationMed.toggleSelectAll"
-              @toggle-select="consultationMed.toggleSelect" @add-manual="consultationMed.addManual"
-              @remove-manual="consultationMed.removeManual" />
+              :selected-medicine-cache="consultationMed.selectedMedicineCache" :search-form="consultationMed.searchForm"
+              @search="consultationMed.handleSearch" @table-change="consultationMed.handleTableChange"
+              @toggle-select-all="consultationMed.toggleSelectAll" @toggle-select="consultationMed.toggleSelect"
+              @add-manual="consultationMed.addManual" @remove-manual="consultationMed.removeManual" />
 
           </div>
 
@@ -211,25 +211,27 @@
           <!-- 简化药品列表预览（仅列名称） -->
           <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px;">
             <thead>
-              <tr>
-                <th v-for="col in suggestionTableHeaders" :key="col"
-                  style="border:1px solid #555;padding:3px 4px;text-align:center;white-space:nowrap;">{{ col }}</th>
-              </tr>
+              <th v-for="col in prescriptionTableHeaders" :key="col.en"
+                style="border: 1px solid ; padding: 4px 4px; text-align: center; white-space: nowrap; background: #fff;">
+                <div>{{ col.zh }}</div>
+                {{ col.en }}
+              </th>
             </thead>
             <tbody>
               <tr v-for="(item, idx) in consultationMed.buildMedicines()" :key="idx">
-                <td style="border:1px solid #555;padding:4px;text-align:center;">{{ idx + 1 }}</td>
-                <td style="border:1px solid #555;padding:4px;">{{ item.name }}</td>
-                <td style="border:1px solid #555;padding:4px;text-align:center;">{{ item.spec }}</td>
-                <td style="border:1px solid #555;padding:4px;text-align:center;">{{ item.dosageForm }}</td>
-                <td style="border:1px solid #555;padding:4px;text-align:center;">{{ item.directionsRoute }}</td>
-                <td style="border:1px solid #555;padding:4px;text-align:center;">{{ item.frenquency }}</td>
+
+                <td style="border:1px solid #555;padding:4px;">{{ item.ID }}</td>
+
+                <td style="border:1px solid #555;padding:4px;">{{ item.drugDetails }}</td>
+                <td style="border:1px solid #555;padding:4px;text-align:center;">{{ item.uom }}</td>
+                <td style="border:1px solid #555;padding:4px;text-align:center;">{{ item.dosageDirections }}</td>
                 <td style="border:1px solid #555;padding:4px;text-align:center;">{{ item.duration }}</td>
                 <td style="border:1px solid #555;padding:4px;text-align:center;">{{ item.medicineCun }}</td>
-                <td style="border:1px solid #555;padding:4px;text-align:center;">{{ item.specialPurpose }}</td>
+                <td style="border:1px solid #555;padding:4px;text-align:center;">{{ item.unit }}</td>
+
               </tr>
               <tr v-if="!consultationMed.buildMedicines().length">
-                <td colspan="9" style="border:1px solid #555;padding:8px;text-align:center;">（暫無藥品）</td>
+                <td colspan="7" style="border:1px solid #555;padding:8px;text-align:center;">（暫無藥品）</td>
               </tr>
             </tbody>
           </table>
@@ -333,28 +335,28 @@
             <tr>
               <th v-for="col in prescriptionTableHeaders" :key="col.en"
                 style="border: 1px solid ; padding: 4px 4px; text-align: center; white-space: nowrap; background: #fff;">
-                {{ col.zh }}({{ col.en }})
+                <div>{{ col.zh }}</div>
+                {{ col.en }}
               </th>
             </tr>
           </thead>
           <tbody>
             <template v-if="checkDetail.medicines && checkDetail.medicines.length > 0">
               <tr v-for="(item, index) in checkDetail.medicines" :key="index">
-                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ index + 1 }}</td>
-                <td style="border: 1px solid ; padding: 6px;">{{ item.name || '' }}</td>
-                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.spec || '' }}</td>
-                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.dosageForm || ''
+
+                <td style="border: 1px solid ; padding: 6px;">{{ item.medicineId || '' }}</td>
+
+                <td style="border: 1px solid ; padding: 6px;">{{ item.drugDetails || '' }}</td>
+                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.uom || ''
                 }}</td>
-                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.directionsRoute ||
+                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.dosageDirections ||
                   '' }}</td>
-                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.frenquency || ''
-                }}</td>
                 <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.duration || '' }}
                 </td>
+
                 <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.medicineCun || ''
                 }}</td>
-                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.specialPurpose ||
-                  '' }}</td>
+                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.unit || '' }}</td>
               </tr>
             </template>
 
@@ -522,6 +524,7 @@
               :medicine-pagination="editSuggestionMed.medicinePagination"
               :selected-ids="editSuggestionMed.selectedIds.value" :quantities="editSuggestionMed.quantities"
               :extra-fields="editSuggestionMed.extraFields" :manual-medicines="editSuggestionMed.manualMedicines.value"
+              :selected-medicine-cache="editSuggestionMed.selectedMedicineCache"
               :search-form="editSuggestionMed.searchForm" @search="editSuggestionMed.handleSearch"
               @table-change="editSuggestionMed.handleTableChange" @toggle-select-all="editSuggestionMed.toggleSelectAll"
               @toggle-select="editSuggestionMed.toggleSelect" @add-manual="editSuggestionMed.addManual"
@@ -573,24 +576,32 @@
           <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px;">
             <thead>
               <tr>
-                <th v-for="col in suggestionTableHeaders" :key="col"
-                  style="border:1px solid #555;padding:3px 4px;text-align:center;white-space:nowrap;">{{ col }}</th>
+
+                <th v-for="col in suggestionTableHeaders" :key="col.en"
+                  style="border: 1px solid ; padding: 4px 4px; text-align: center; white-space: nowrap; background: #fff;">
+                  <div>{{ col.zh }}</div>
+                  {{ col.en }}
+                </th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="(item, idx) in editSuggestionMed.buildMedicines()" :key="idx">
-                <td style="border:1px solid #555;padding:4px;text-align:center;">{{ idx + 1 }}</td>
-                <td style="border:1px solid #555;padding:4px;">{{ item.name }}</td>
-                <td style="border:1px solid #555;padding:4px;text-align:center;">{{ item.spec }}</td>
-                <td style="border:1px solid #555;padding:4px;text-align:center;">{{ item.dosageForm }}</td>
-                <td style="border:1px solid #555;padding:4px;text-align:center;">{{ item.directionsRoute }}</td>
-                <td style="border:1px solid #555;padding:4px;text-align:center;">{{ item.frenquency }}</td>
-                <td style="border:1px solid #555;padding:4px;text-align:center;">{{ item.duration }}</td>
-                <td style="border:1px solid #555;padding:4px;text-align:center;">{{ item.medicineCun }}</td>
-                <td style="border:1px solid #555;padding:4px;text-align:center;">{{ item.specialPurpose }}</td>
+                <td style="border: 1px solid ; padding: 6px;">{{ item.medicineId || '' }}</td>
+
+                <td style="border: 1px solid ; padding: 6px;">{{ item.drugDetails || '' }}</td>
+                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.uom || ''
+                }}</td>
+                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.dosageDirections ||
+                  '' }}</td>
+                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.duration || '' }}
+                </td>
+                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.medicineCun || ''
+                }}</td>
+                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.unit || '' }}</td>
+
               </tr>
               <tr v-if="!editSuggestionMed.buildMedicines().length">
-                <td colspan="9" style="border:1px solid #555;padding:8px;text-align:center;">（暫無藥品）</td>
+                <td colspan="7" style="border:1px solid #555;padding:8px;text-align:center;">（暫無藥品）</td>
               </tr>
             </tbody>
           </table>
@@ -748,15 +759,14 @@ import { useSpeechRecognition } from './useSpeechRecognition.js';
 import { useMedicineSelector } from './useMedicineSelector';
 import { useImageUpload } from './useImageUpload';
 const prescriptionTableHeaders = [
-  { zh: '項目', en: 'Item' },
-  { zh: '藥物名稱', en: 'Drug name' },
-  { zh: '劑量', en: 'Strength' },
-  { zh: '劑型', en: 'Dosage form' },
-  { zh: '用法／途徑', en: 'Directions / route' },
-  { zh: '頻次', en: 'Frequency' },
-  { zh: '療程', en: 'Duration' },
+  { zh: '藥品代碼', en: 'Code' },
+  { zh: '藥品名稱', en: 'Drug Details' },
+  { zh: '計量單位', en: 'UOM' },
+  { zh: '用法用量', en: 'Dosage and Directions' },
+  { zh: '持續時間（天）', en: 'Duration(Days)' },
   { zh: '數量', en: 'Quantity' },
-  { zh: '特殊用法', en: 'Route of Administration' },
+  { zh: '單位', en: 'Unit' },
+
 ];
 // -----------------------------------------------
 // i18n
@@ -1102,6 +1112,9 @@ const userCaseList = ref([]);
 const activeCaseKey = ref([]);
 const fallbackImage = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgesAdwF3VP4LAAA=';
 const decryption = async (url) => {
+  if (!url || !url.toLowerCase().endsWith('.enc')) {
+    return url
+  }
   try {
     const res = await axios.get(
       'https://hqgy.gzxinxingyiyuan.com/filedec/file/desfile/download',
@@ -1321,7 +1334,15 @@ const suggestionUploading = ref(false);
 /** 建议单上传成功后的图片 URL */
 const suggestionImageUrl = ref('');
 /** 建议单药品表格列头 */
-const suggestionTableHeaders = ['項目(Item)', '藥物名稱(Drug name)', '劑量(Strength)', '劑型(Dosage form)', '用法/途徑(Directions/route)', '頻次(Frequency)', '療程(Duration)', '數量(Quantity)', '特殊用法(Route)'];
+const suggestionTableHeaders = [
+  { zh: '藥品代碼', en: 'Code' },
+  { zh: '藥品名稱', en: 'Drug Details' },
+  { zh: '計量單位', en: 'UOM' },
+  { zh: '用法用量', en: 'Dosage and Directions' },
+  { zh: '持續時間（天）', en: 'Duration(Days)' },
+  { zh: '數量', en: 'Quantity' },
+  { zh: '單位', en: 'Unit' },
+];
 const consultationMed = useMedicineSelector();
 watch(() => consultationModalVisible.value, (val) => { if (!val) consultationMed.reset(); });
 const showConsultationModal = async (record) => {
@@ -1370,26 +1391,21 @@ const saveConsultation = () => {
     const extra = consultationMed.extraFields[id] || {};
     const item = consultationMed.medicineList.value.find((m) => m.id === id);
     const name = item?.name || '藥品';
-    if (!extra.dosageForm) return message.warning(`請填寫【${name}】的劑型`);
-    if (!extra.frenquency) return message.warning(`請填寫【${name}】的頻次`);
-    if (!extra.duration) return message.warning(`請填寫【${name}】的療程`);
-    if (!extra.directionsRoute) return message.warning(`��填寫【${name}】的用法/途徑`);
-    if (!extra.specialPurpose) return message.warning(`請填寫【${name}】的特殊用途`);
+    if (!extra.dosageDirections) return message.warning(`請填寫【${name}】的用法用量`);
+    if (!extra.duration) return message.warning(`請填寫【${name}】的持續時間`);
+    if (!extra.unit) return message.warning(`請填寫【${name}】的單位`);
     if (!consultationMed.quantities[id]) return message.warning(`請填寫【${name}】的數量`);
   }
   for (const item of consultationMed.manualMedicines.value) {
-    const isEmpty = !item.name && !item.spec && !item.clazz && !item.medicineCun &&
-      !item.dosageForm && !item.frenquency && !item.duration && !item.directionsRoute && !item.specialPurpose;
+    const isEmpty = !item.drugDetails && !item.uom && !item.medicineCun &&
+      !item.unit && !item.duration && !item.dosageDirections;
     if (isEmpty) continue;
-    if (!item.name) return message.warning('請填寫手動新增藥品名稱');
-    if (!item.medicineCun) return message.warning(`請填寫【${item.name}】的數��`);
-    if (!item.dosageForm) return message.warning(`請填寫【${item.name}】的劑型`);
-    if (!item.frenquency) return message.warning(`請填寫【${item.name}】的頻次`);
-    if (!item.duration) return message.warning(`請填寫【${item.name}】的療程`);
-    if (!item.directionsRoute) return message.warning(`請填寫【${item.name}】的用法/途徑`);
-    if (!item.specialPurpose) return message.warning(`請填寫【${item.name}】的特殊用途`);
-    if (!item.clazz) return message.warning(`請填寫【${item.name}】的藥品分類`);
-    if (!item.spec) return message.warning(`請填寫【${item.name}】的藥品規格`);
+    if (!item.drugDetails) return message.warning('請填寫手動新增藥品詳情');
+    if (!item.medicineCun) return message.warning(`請填寫【${item.drugDetails}】的數量`);
+    if (!item.dosageDirections) return message.warning(`請填寫【${item.drugDetails}】的用法用量`);
+    if (!item.duration) return message.warning(`請填寫【${item.drugDetails}】的持續時間`);
+    if (!item.unit) return message.warning(`請填寫【${item.drugDetails}】的單位`);
+    if (!item.uom) return message.warning(`請填寫【${item.drugDetails}】的計量單位`);
   }
   // 弹第一步预览确认（建议单样式）
   confirmSignVisible.value = true;
@@ -1880,26 +1896,21 @@ const saveEditSuggestion = () => {
     const extra = editSuggestionMed.extraFields[id] || {};
     const item = editSuggestionMed.medicineList.value.find((m) => m.id === id);
     const name = item?.name || '藥品';
-    if (!extra.dosageForm) return message.warning(`請填寫【${name}】的劑型`);
-    if (!extra.frenquency) return message.warning(`請填寫【${name}】的頻次`);
-    if (!extra.duration) return message.warning(`請填寫【${name}】的療程`);
-    if (!extra.directionsRoute) return message.warning(`請填寫【${name}】的用法/途徑`);
-    if (!extra.specialPurpose) return message.warning(`請填寫【${name}】的特殊用途`);
+    if (!extra.dosageDirections) return message.warning(`請填寫【${name}】的用法用量`);
+    if (!extra.duration) return message.warning(`請填寫【${name}】的持續時間`);
+    if (!extra.unit) return message.warning(`請填寫【${name}】的單位`);
     if (!editSuggestionMed.quantities[id]) return message.warning(`請填寫【${name}】的數量`);
   }
   for (const item of editSuggestionMed.manualMedicines.value) {
-    const isEmpty = !item.name && !item.spec && !item.clazz && !item.medicineCun &&
-      !item.dosageForm && !item.frenquency && !item.duration && !item.directionsRoute && !item.specialPurpose;
+    const isEmpty = !item.drugDetails && !item.uom && !item.medicineCun &&
+      !item.unit && !item.duration && !item.dosageDirections;
     if (isEmpty) continue;
-    if (!item.name) return message.warning('請填寫手動新增藥品名稱');
-    if (!item.medicineCun) return message.warning(`請填寫【${item.name}】的數量`);
-    if (!item.dosageForm) return message.warning(`請填寫【${item.name}】的劑型`);
-    if (!item.frenquency) return message.warning(`請填寫【${item.name}】的頻次`);
-    if (!item.duration) return message.warning(`請填寫【${item.name}】的療程`);
-    if (!item.directionsRoute) return message.warning(`請填寫【${item.name}】的用法/途徑`);
-    if (!item.specialPurpose) return message.warning(`請填寫【${item.name}】的特殊用途`);
-    if (!item.clazz) return message.warning(`請填寫【${item.name}】的藥品分類`);
-    if (!item.spec) return message.warning(`請填寫【${item.name}】的藥品規格`);
+    if (!item.drugDetails) return message.warning('請填寫手動新增藥品詳情');
+    if (!item.medicineCun) return message.warning(`請填寫【${item.drugDetails}】的數量`);
+    if (!item.dosageDirections) return message.warning(`請填寫【${item.drugDetails}】的用法用量`);
+    if (!item.duration) return message.warning(`請填寫【${item.drugDetails}】的持續時間`);
+    if (!item.unit) return message.warning(`請填寫【${item.drugDetails}】的單位`);
+    if (!item.uom) return message.warning(`請填寫【${item.drugDetails}】的計量單位`);
   }
   // 弹第一步：预览建议单 + 截���上传
   editSuggestionImageUrl.value = '';

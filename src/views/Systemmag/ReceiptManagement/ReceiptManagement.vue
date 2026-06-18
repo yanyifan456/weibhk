@@ -223,13 +223,10 @@
                     <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 16px;">
                         <thead>
                             <tr>
+
                                 <th
                                     style="border: 1px solid #d9d9d9; padding: 6px 4px; text-align: center; background: #fafafa;">
-                                    產品描述<br /><span style="font-size: 10px; color: #666;">(Description)</span>
-                                </th>
-                                <th
-                                    style="border: 1px solid #d9d9d9; padding: 6px 4px; text-align: center; background: #fafafa;">
-                                    規格<br /><span style="font-size: 10px; color: #666;">(Quantity)</span>
+                                    药品详情<br /><span style="font-size: 10px; color: #666;">(Drug/Details)</span>
                                 </th>
                                 <th
                                     style="border: 1px solid #d9d9d9; padding: 6px 4px; text-align: center; background: #fafafa;">
@@ -256,10 +253,9 @@
                         </thead>
                         <tbody>
                             <tr v-for="(med, idx) in (drugFeeReceiptData.medicines || [])" :key="idx">
-                                <td style="border: 1px solid #d9d9d9; padding: 6px 4px; text-align: left;">{{ med.name
-                                    || '-' }}
-                                </td>
-                                <td style="border: 1px solid #d9d9d9; padding: 6px 4px; text-align: center;">{{ med.spec
+
+                                <td style="border: 1px solid #d9d9d9; padding: 6px 4px; text-align: center;">{{
+                                    med.drugDetails
                                     || '-' }}
                                 </td>
                                 <td style="border: 1px solid #d9d9d9; padding: 6px 4px; text-align: center;">HKD{{
@@ -329,7 +325,7 @@
                                 Pay微信支付</a-checkbox>
                         </div>
                         <img src="https://hqgy.gzxinxingyiyuan.com/orglogo/xxgz2_2026060815280186e82ff0e07b4b74869acec45c522e69.png"
-                            alt="logo" style="width: 100px;" />
+                            alt="logo" style="width: 100px;margin-top: -180px;" />
                     </div>
 
                     <hr style="border: none; border-top: 1px solid #d9d9d9; margin: 16px 0;" />
@@ -361,10 +357,10 @@
                     <a-button style="margin-right: 16px;" @click="handleDrugFeeReceiptExport">
                         導出
                     </a-button>
-                    <a-button style="margin-right: 16px;" @click="handleDrugFeeReceiptGenerateLink"
+                    <!-- <a-button style="margin-right: 16px;" @click="handleDrugFeeReceiptGenerateLink"
                         :loading="generateLinkLoading">
                         生成鏈接
-                    </a-button>
+                    </a-button> -->
                     <a-button type="primary" @click="handleDrugFeeReceiptPrint">
                         打印
                     </a-button>
@@ -372,7 +368,7 @@
             </a-modal>
             <!-- 会诊报告详情弹窗 -->
             <a-modal v-model:open="reportModalVisible" title="" width="60%" :footer="null">
-                <div class="consultation-report">
+                <div ref="consultationReportPrintRef" class="consultation-report">
                     <HospitalHeader :doctor-name="checkDetail.doctorName" :hk-certificate="checkDetail.hkCertificate"
                         :pro-qualify-certificate="checkDetail.proQualifyCertificate"
                         :practice-site="checkDetail.practiceSite" :hospital-name="checkDetail.hospitalName"
@@ -393,42 +389,31 @@
                             <tr>
                                 <th v-for="col in prescriptionTableHeaders" :key="col.en"
                                     style="border: 1px solid ; padding: 4px 4px; text-align: center; white-space: nowrap; background: #fff;">
-                                    {{ col.zh }}({{ col.en }})
+                                    <div>{{ col.zh }}</div>
+                                    {{ col.en }}
                                 </th>
                             </tr>
                         </thead>
                         <tbody>
                             <template v-if="checkDetail.medicines && checkDetail.medicines.length > 0">
                                 <tr v-for="(item, index) in checkDetail.medicines" :key="index">
-                                    <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ index + 1 }}
-                                    </td>
-                                    <td style="border: 1px solid ; padding: 6px;">{{ item.name || '' }}</td>
-                                    <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.spec || ''
-                                        }}
-                                    </td>
-                                    <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.dosageForm
-                                        ||
-                                        ''
-                                    }}</td>
+                                    <td style="border: 1px solid ; padding: 6px;">{{ item.medicineId || '' }}</td>
+
+                                    <td style="border: 1px solid ; padding: 6px;">{{ item.drugDetails || '' }}</td>
+                                    <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.uom || ''
+                                        }}</td>
                                     <td style="border: 1px solid ; padding: 6px; text-align: center;">{{
-                                        item.directionsRoute ||
+                                        item.dosageDirections ||
                                         '' }}</td>
-                                    <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.frenquency
-                                        ||
-                                        ''
-                                    }}</td>
                                     <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.duration
-                                        || ''
-                                        }}
+                                        || '' }}
                                     </td>
                                     <td style="border: 1px solid ; padding: 6px; text-align: center;">{{
-                                        item.medicineCun ||
-                                        ''
-                                    }}</td>
-                                    <td style="border: 1px solid ; padding: 6px; text-align: center;">{{
-                                        item.specialPurpose
-                                        ||
-                                        '' }}</td>
+                                        item.medicineCun || ''
+                                        }}</td>
+                                    <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.unit || ''
+                                        }}</td>
+
                                 </tr>
                             </template>
                         </tbody>
@@ -458,13 +443,34 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- 底部按钮 -->
+                <div style="margin-top: 24px; text-align: center;">
+                    <a-button style="margin-right: 16px;" @click="handleConsultationReportExport">
+                        導出
+                    </a-button>
+                    <a-button type="primary" @click="handleConsultationReportPrint">
+                        打印
+                    </a-button>
+                </div>
             </a-modal>
 
             <!-- 處方單弹窗 -->
             <a-modal v-model:open="prescriptionNewModalVisible" title="" width="60%" :footer="null"
                 :bodyStyle="{ padding: '32px 40px' }">
-                <PrescriptionForm :detail="dispensingDetail" />
+                <div ref="prescriptionPrintRef">
+                    <PrescriptionForm :detail="dispensingDetail" />
 
+                </div>
+                <!-- 底部按钮 -->
+                <div style="margin-top: 24px; text-align: center;">
+                    <a-button style="margin-right: 16px;" @click="handlePrescriptionExport">
+                        導出
+                    </a-button>
+                    <a-button type="primary" @click="handlePrescriptionPrint">
+                        打印
+                    </a-button>
+                </div>
             </a-modal>
         </div>
     </template>
@@ -484,15 +490,13 @@ import drugReceiptLogo from '../../../assets/img/14.png';
 const kosda = ref(true);
 const { t } = useI18n();
 const prescriptionTableHeaders = [
-    { zh: '項目', en: 'Item' },
-    { zh: '藥物名稱', en: 'Drug name' },
-    { zh: '劑量', en: 'Strength' },
-    { zh: '劑型', en: 'Dosage form' },
-    { zh: '用法／途徑', en: 'Directions / route' },
-    { zh: '頻次', en: 'Frequency' },
-    { zh: '療程', en: 'Duration' },
+    { zh: '藥品代碼', en: 'Code' },
+    { zh: '藥品名稱', en: 'Drug Details' },
+    { zh: '計量單位', en: 'UOM' },
+    { zh: '用法用量', en: 'Dosage and Directions' },
+    { zh: '持續時間（天）', en: 'Duration(Days)' },
     { zh: '數量', en: 'Quantity' },
-    { zh: '特殊用法', en: 'Route of Administration' },
+    { zh: '單位', en: 'Unit' },
 ];
 
 // ==================== 查询表单 ====================
@@ -610,8 +614,7 @@ const handleReceiptPrint = () => {
     printWindow.document.close();
     printWindow.print();
 };
-
-// 诊费收据导出PDF（修复版 - 支持完整内容导出和多页）
+// 诊费收据导出PDF
 const handleReceiptExport = async () => {
     const element = receiptPrintRef.value;
     if (!element) return;
@@ -622,36 +625,48 @@ const handleReceiptExport = async () => {
             allowTaint: true,
             logging: false,
             backgroundColor: "#ffffff",
+            onclone: async (clonedDoc) => {
+                clonedDoc.querySelectorAll('slot').forEach(el => el.remove());
+                clonedDoc.querySelectorAll('a-checkbox').forEach(el => el.remove());
+                // 跨域 orglogo 图片通过代理 fetch 后转 base64
+                const imgs = clonedDoc.querySelectorAll('img');
+                for (const img of imgs) {
+                    const src = img.getAttribute('src') || img.src;
+                    if (src && src.includes('hqgy.gzxinxingyiyuan.com/orglogo')) {
+                        const proxySrc = src.replace(/https?:\/\/hqgy\.gzxinxingyiyuan\.com\/orglogo/, '/orglogo');
+                        try {
+                            const response = await fetch(proxySrc);
+                            const blob = await response.blob();
+                            const base64 = await new Promise(resolve => {
+                                const reader = new FileReader();
+                                reader.onloadend = () => resolve(reader.result);
+                                reader.readAsDataURL(blob);
+                            });
+                            img.src = base64;
+                            img.setAttribute('src', base64);
+                        } catch (e) {
+                            // 忽略转换失败
+                        }
+                    }
+                }
+            },
         });
-
         const imgData = canvas.toDataURL("image/png");
         const pdf = new jsPDF("p", "mm", "a4");
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfPageHeight = pdf.internal.pageSize.getHeight();
-        const imgWidth = pdfWidth - 20; // 左右各留10mm边距
+        const imgWidth = pdfWidth - 20;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        const margin = 10; // 边距
-
-        // 如果内容高度小于等于一页可用高度，直接放到一页
+        const margin = 10;
         if (imgHeight <= pdfPageHeight - 2 * margin) {
             pdf.addImage(imgData, "PNG", margin, margin, imgWidth, imgHeight);
         } else {
-            // 内容超过一页，需要分页处理
-            // 计算每页可以显示的内容高度
             const pageContentHeight = pdfPageHeight - 2 * margin;
-            // 计算总共需要多少页
             const totalPages = Math.ceil(imgHeight / pageContentHeight);
-
             for (let page = 0; page < totalPages; page++) {
-                if (page > 0) {
-                    pdf.addPage();
-                }
-
-                // 计算当前页需要裁剪的canvas部分
+                if (page > 0) pdf.addPage();
                 const sourceY = (page * pageContentHeight * canvas.width) / imgWidth;
                 const sourceHeight = Math.min((pageContentHeight * canvas.width) / imgWidth, canvas.height - sourceY);
-
-                // 创建临时canvas来裁剪当前页的内容
                 const tempCanvas = document.createElement("canvas");
                 tempCanvas.width = canvas.width;
                 tempCanvas.height = sourceHeight;
@@ -659,14 +674,11 @@ const handleReceiptExport = async () => {
                 tempCtx.fillStyle = "#ffffff";
                 tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
                 tempCtx.drawImage(canvas, 0, sourceY, canvas.width, sourceHeight, 0, 0, canvas.width, sourceHeight);
-
                 const pageImgData = tempCanvas.toDataURL("image/png");
                 const pageImgHeight = (sourceHeight * imgWidth) / canvas.width;
-
                 pdf.addImage(pageImgData, "PNG", margin, margin, imgWidth, pageImgHeight);
             }
         }
-
         pdf.save(`${t("receipt.receiptTitle")}.pdf`);
         message.success(t("receipt.exportSuccess"));
     } catch (error) {
@@ -678,6 +690,8 @@ const handleReceiptExport = async () => {
 const drugFeeReceiptVisible = ref(false);
 const drugFeeReceiptData = ref({});
 const drugFeeReceiptPrintRef = ref(null);
+const consultationReportPrintRef = ref(null);
+const prescriptionPrintRef = ref(null);
 const generateLinkLoading = ref(false);
 
 // 显示药费收据弹窗
@@ -703,6 +717,7 @@ const showDrugFeeReceiptModal = async (record) => {
                         price: m.price,
                         customDuty: m.customDuty,
                         medicineId: m.medicineId || '',
+                        drugDetails: m.drugDetails
                     }))
                     : [],
                 logisticsFee: data.logisticsFee || '',
@@ -757,6 +772,31 @@ const handleDrugFeeReceiptExport = async () => {
             allowTaint: true,
             logging: false,
             backgroundColor: '#ffffff',
+            onclone: async (clonedDoc) => {
+                clonedDoc.querySelectorAll('slot').forEach(el => el.remove());
+                clonedDoc.querySelectorAll('a-checkbox').forEach(el => el.remove());
+                // 跨域 orglogo 图片通过代理 fetch 后转 base64
+                const imgs = clonedDoc.querySelectorAll('img');
+                for (const img of imgs) {
+                    const src = img.getAttribute('src') || img.src;
+                    if (src && src.includes('hqgy.gzxinxingyiyuan.com/orglogo')) {
+                        const proxySrc = src.replace(/https?:\/\/hqgy\.gzxinxingyiyuan\.com\/orglogo/, '/orglogo');
+                        try {
+                            const response = await fetch(proxySrc);
+                            const blob = await response.blob();
+                            const base64 = await new Promise(resolve => {
+                                const reader = new FileReader();
+                                reader.onloadend = () => resolve(reader.result);
+                                reader.readAsDataURL(blob);
+                            });
+                            img.src = base64;
+                            img.setAttribute('src', base64);
+                        } catch (e) {
+                            // 忽略转换失败
+                        }
+                    }
+                }
+            },
         });
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF('p', 'mm', 'a4');
@@ -765,7 +805,6 @@ const handleDrugFeeReceiptExport = async () => {
         const imgWidth = pdfWidth - 20;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
         const margin = 10;
-
         if (imgHeight <= pdfPageHeight - 2 * margin) {
             pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
         } else {
@@ -787,7 +826,6 @@ const handleDrugFeeReceiptExport = async () => {
                 pdf.addImage(pageImgData, 'PNG', margin, margin, imgWidth, pageImgHeight);
             }
         }
-
         pdf.save('藥費收據.pdf');
         message.success(t('receipt.exportSuccess'));
     } catch (error) {
@@ -887,6 +925,82 @@ const getDetail = async (id) => {
     }
 };
 
+// 会诊报告导出PDF
+const handleConsultationReportExport = async () => {
+    const element = consultationReportPrintRef.value;
+    if (!element) return;
+    try {
+        const canvas = await html2canvas(element, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            logging: false,
+            backgroundColor: "#ffffff",
+            onclone: (clonedDoc) => {
+                clonedDoc.querySelectorAll('slot').forEach(el => el.remove());
+            },
+        });
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF("p", "mm", "a4");
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfPageHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = pdfWidth - 20;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        const margin = 10;
+        if (imgHeight <= pdfPageHeight - 2 * margin) {
+            pdf.addImage(imgData, "PNG", margin, margin, imgWidth, imgHeight);
+        } else {
+            const pageContentHeight = pdfPageHeight - 2 * margin;
+            const totalPages = Math.ceil(imgHeight / pageContentHeight);
+            for (let page = 0; page < totalPages; page++) {
+                if (page > 0) pdf.addPage();
+                const sourceY = (page * pageContentHeight * canvas.width) / imgWidth;
+                const sourceHeight = Math.min((pageContentHeight * canvas.width) / imgWidth, canvas.height - sourceY);
+                const tempCanvas = document.createElement("canvas");
+                tempCanvas.width = canvas.width;
+                tempCanvas.height = sourceHeight;
+                const tempCtx = tempCanvas.getContext("2d");
+                tempCtx.fillStyle = "#ffffff";
+                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                tempCtx.drawImage(canvas, 0, sourceY, canvas.width, sourceHeight, 0, 0, canvas.width, sourceHeight);
+                const pageImgData = tempCanvas.toDataURL("image/png");
+                const pageImgHeight = (sourceHeight * imgWidth) / canvas.width;
+                pdf.addImage(pageImgData, "PNG", margin, margin, imgWidth, pageImgHeight);
+            }
+        }
+        pdf.save('會診報告.pdf');
+        message.success(t('receipt.exportSuccess'));
+    } catch (error) {
+        console.error('导出失败', error);
+        message.error(t('receipt.exportFailed'));
+    }
+};
+
+// 会诊报告打印
+const handleConsultationReportPrint = () => {
+    const printContent = consultationReportPrintRef.value;
+    if (!printContent) return;
+    const printWindow = window.open();
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>會診報告</title>
+            <style>
+                body { font-family: 'SimSun', serif; padding: 24px; color: #222; }
+                table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 16px; }
+                th, td { border: 1px solid #ccc; padding: 6px 4px; text-align: center; }
+                hr { border: none; border-top: 1px solid #ccc; margin: 8px 0; }
+            </style>
+        </head>
+        <body>
+            ${printContent.innerHTML}
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+};
+
 // ==================== 处方单弹窗方法 ====================
 const showPrescriptionModalNew = async (record) => {
     dispensingDetail.value = {};
@@ -901,6 +1015,81 @@ const showPrescriptionModalNew = async (record) => {
     prescriptionNewModalVisible.value = true;
 };
 
+// 会诊处方导出PDF
+const handlePrescriptionExport = async () => {
+    const element = prescriptionPrintRef.value;
+    if (!element) return;
+    try {
+        const canvas = await html2canvas(element, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            logging: false,
+            backgroundColor: "#ffffff",
+            onclone: (clonedDoc) => {
+                clonedDoc.querySelectorAll('slot').forEach(el => el.remove());
+            },
+        });
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF("p", "mm", "a4");
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfPageHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = pdfWidth - 20;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        const margin = 10;
+        if (imgHeight <= pdfPageHeight - 2 * margin) {
+            pdf.addImage(imgData, "PNG", margin, margin, imgWidth, imgHeight);
+        } else {
+            const pageContentHeight = pdfPageHeight - 2 * margin;
+            const totalPages = Math.ceil(imgHeight / pageContentHeight);
+            for (let page = 0; page < totalPages; page++) {
+                if (page > 0) pdf.addPage();
+                const sourceY = (page * pageContentHeight * canvas.width) / imgWidth;
+                const sourceHeight = Math.min((pageContentHeight * canvas.width) / imgWidth, canvas.height - sourceY);
+                const tempCanvas = document.createElement("canvas");
+                tempCanvas.width = canvas.width;
+                tempCanvas.height = sourceHeight;
+                const tempCtx = tempCanvas.getContext("2d");
+                tempCtx.fillStyle = "#ffffff";
+                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                tempCtx.drawImage(canvas, 0, sourceY, canvas.width, sourceHeight, 0, 0, canvas.width, sourceHeight);
+                const pageImgData = tempCanvas.toDataURL("image/png");
+                const pageImgHeight = (sourceHeight * imgWidth) / canvas.width;
+                pdf.addImage(pageImgData, "PNG", margin, margin, imgWidth, pageImgHeight);
+            }
+        }
+        pdf.save('處方單.pdf');
+        message.success(t('receipt.exportSuccess'));
+    } catch (error) {
+        console.error('导出失败', error);
+        message.error(t('receipt.exportFailed'));
+    }
+};
+
+// 处方单打印
+const handlePrescriptionPrint = () => {
+    const printContent = prescriptionPrintRef.value;
+    if (!printContent) return;
+    const printWindow = window.open();
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>處方單</title>
+            <style>
+                body { font-family: 'SimSun', serif; padding: 24px; color: #222; }
+                table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 16px; }
+                th, td { border: 1px solid #ccc; padding: 6px 4px; text-align: center; }
+                hr { border: none; border-top: 1px solid #ccc; margin: 8px 0; }
+            </style>
+        </head>
+        <body>
+            ${printContent.innerHTML}
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+};
 
 // ==================== 查询 / 重置 / 分页 ====================
 const handleSearch = () => {

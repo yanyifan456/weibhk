@@ -4,7 +4,7 @@
             {{ label }}：
         </span>
 
-        <a-input :value="modelValue" :placeholder="placeholder" :style="{ width }" size="small" @input="handleInput" />
+        <a-input :value="modelValue" :placeholder="placeholder" :style="{ width }" :maxlength="maxlength" size="small" @input="handleInput" />
     </div>
 </template>
 
@@ -17,11 +17,19 @@ const props = defineProps({
         type: String,
         default: '100px',
     },
+    maxlength: {
+        type: Number,
+        default: undefined,
+    },
 })
 
 const emit = defineEmits(['update:modelValue'])
 
 const handleInput = (e) => {
-    emit('update:modelValue', e.target.value)
+    let val = e.target.value;
+    if (props.maxlength && val.length > props.maxlength) {
+        val = val.slice(0, props.maxlength);
+    }
+    emit('update:modelValue', val);
 }
 </script>

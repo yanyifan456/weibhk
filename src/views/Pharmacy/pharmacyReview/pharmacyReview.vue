@@ -71,43 +71,33 @@
     </a-modal>
 
     <!-- 通过审核-药品清单弹窗 -->
-    <a-modal v-model:open="medicinePriceModalVisible" title="药品清单" width="700px" @ok="confirmMedicinePrice"
+    <a-modal v-model:open="medicinePriceModalVisible" title="药品清单" width="1500px" @ok="confirmMedicinePrice"
       @cancel="medicinePriceModalVisible = false">
       <div class="medicine-modal">
-        <a-table :columns="medicineColumns" :data-source="medicinePriceList" :pagination="false" row-key="id">
-          <template #bodyCell="{ column, record, index }">
-            <template v-if="column.key === 'name'">
-              <span>{{ record.name }}</span>
+        <a-table :columns="medicineColumns" :data-source="medicinePriceList" :pagination="false" :scroll="{ x: 1200 }"
+          row-key="id">
+          <template #bodyCell="{ column, record }">
+            <template v-if="column.key === 'medicineId'">
+              <span>{{ record.medicineId }}</span>
             </template>
-            <template v-else-if="column.key === 'spec'">
-              <span>{{ record.spec }}</span>
+            <template v-else-if="column.key === 'drugDetails'">
+              <span>{{ record.drugDetails }}</span>
             </template>
-            <template v-else-if="column.key === 'medicineCun'">
-              <span>{{ record.medicineCun }}</span>
+            <template v-else-if="column.key === 'uom'">
+              <span>{{ record.uom }}</span>
             </template>
-            <template v-else-if="column.key === 'dosageForm'">
-              <span>{{ record.dosageForm }}</span>
-            </template>
-            <template v-else-if="column.key === 'frenquency'">
-              <span>{{ record.frenquency }}</span>
+            <template v-else-if="column.key === 'dosageDirections'">
+              <span>{{ record.dosageDirections }}</span>
             </template>
             <template v-else-if="column.key === 'duration'">
               <span>{{ record.duration }}</span>
             </template>
-            <template v-else-if="column.key === 'directionsRoute'">
-              <span>{{ record.directionsRoute }}</span>
+            <template v-else-if="column.key === 'medicineCun'">
+              <span>{{ record.medicineCun }}</span>
             </template>
-            <template v-else-if="column.key === 'specialPurpose'">
-              <span>{{ record.specialPurpose }}</span>
+            <template v-else-if="column.key === 'unit'">
+              <span>{{ record.unit }}</span>
             </template>
-            <!-- <template v-else-if="column.key === 'price'">
-              <a-input-number v-model:value="record.price" :min="0" :precision="2" placeholder="输入单价"
-                style="width: 100%" />
-            </template>
-            <template v-else-if="column.key === 'totalPrice'">
-              <span>{{ record.price && record.medicineCun ? (parseFloat(record.price) * record.medicineCun).toFixed(2) :
-                '0.00' }}</span>
-            </template> -->
           </template>
         </a-table>
         <!-- <div class="mt-4 text-right">
@@ -146,28 +136,27 @@
             <tr>
               <th v-for="col in prescriptionTableHeaders" :key="col.en"
                 style="border: 1px solid ; padding: 4px 4px; text-align: center; white-space: nowrap; background: #fff;">
-                {{ col.zh }}({{ col.en }})
+                <div>{{ col.zh }}</div>
+                {{ col.en }}
               </th>
             </tr>
           </thead>
           <tbody>
             <template v-if="checkDetail.medicines && checkDetail.medicines.length > 0">
               <tr v-for="(item, index) in checkDetail.medicines" :key="index">
-                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ index + 1 }}</td>
-                <td style="border: 1px solid ; padding: 6px;">{{ item.name || '' }}</td>
-                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.spec || '' }}</td>
-                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.dosageForm || ''
+                <td style="border: 1px solid ; padding: 6px;">{{ item.medicineId || '' }}</td>
+
+                <td style="border: 1px solid ; padding: 6px;">{{ item.drugDetails || '' }}</td>
+                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.uom || ''
                 }}</td>
-                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.directionsRoute ||
+                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.dosageDirections ||
                   '' }}</td>
-                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.frenquency || ''
-                }}</td>
                 <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.duration || '' }}
                 </td>
                 <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.medicineCun || ''
                 }}</td>
-                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.specialPurpose ||
-                  '' }}</td>
+                <td style="border: 1px solid ; padding: 6px; text-align: center;">{{ item.unit || '' }}</td>
+
               </tr>
             </template>
           </tbody>
@@ -233,7 +222,7 @@
         <div v-else>
           <a-collapse v-model:activeKey="activeCaseKey" accordion>
             <a-collapse-panel v-for="(item, index) in userCaseList" :key="String(item.id)"
-              :header="$t('userCase.record') + (index + 1) + ' - ' + item.createTime">
+              :header="'病歷記錄' + (index + 1) + ' - ' + item.createTime">
               <a-descriptions :column="1" bordered size="small">
                 <a-descriptions-item :label="'病情描述'">{{ item.condDesc || '--'
                 }}</a-descriptions-item>
@@ -308,21 +297,13 @@ const medicinePriceList = ref([]);
 const currentAuditRecord = ref(null);
 
 const medicineColumns = [
-  { title: "药品名称", dataIndex: "name", key: "name", align: "center" },
-  { title: "规格", dataIndex: "spec", key: "spec", align: "center" },
-  { title: "数量", dataIndex: "medicineCun", key: "medicineCun", align: "center" },
-  { title: "剂型", dataIndex: "dosageForm", key: "dosageForm", align: "center" },
-
-  { title: "频次", dataIndex: "frenquency", key: "frenquency", align: "center" },
-
-  { title: "疗程 ", dataIndex: "duration", key: "duration", align: "center" },
-
-  { title: "用法/途径", dataIndex: "directionsRoute", key: "directionsRoute", align: "center" },
-  { title: "特殊用途", dataIndex: "specialPurpose", key: "specialPurpose", align: "center" },
-
-
-  // { title: "单价", key: "price", align: "center", width: 120 },
-  // { title: "总价", key: "totalPrice", align: "center" },
+  { title: "藥品代碼", dataIndex: "medicineId", key: "medicineId", align: "center", width: 100 },
+  { title: "藥品詳情", dataIndex: "drugDetails", key: "drugDetails", align: "center", width: 600 },
+  { title: "計量單位", dataIndex: "uom", key: "uom", align: "center", width: 100 },
+  { title: "用法用量", dataIndex: "dosageDirections", key: "dosageDirections", align: "center", width: 100 },
+  { title: "持續時間", dataIndex: "duration", key: "duration", align: "center", width: 100 },
+  { title: "數量", dataIndex: "medicineCun", key: "medicineCun", align: "center", width: 100 },
+  { title: "單位", dataIndex: "unit", key: "unit", align: "center", width: 100 },
 ];
 
 
@@ -334,15 +315,13 @@ const props = defineProps({
 })
 
 const prescriptionTableHeaders = [
-  { zh: '項目', en: 'Item' },
-  { zh: '藥物名稱', en: 'Drug name' },
-  { zh: '劑量', en: 'Strength' },
-  { zh: '劑型', en: 'Dosage form' },
-  { zh: '用法／途徑', en: 'Directions / route' },
-  { zh: '頻次', en: 'Frequency' },
-  { zh: '療程', en: 'Duration' },
+  { zh: '藥品代碼', en: 'Code' },
+  { zh: '藥品名稱', en: 'Drug Details' },
+  { zh: '計量單位', en: 'UOM' },
+  { zh: '用法用量', en: 'Dosage and Directions' },
+  { zh: '持續時間（天）', en: 'Duration(Days)' },
   { zh: '數量', en: 'Quantity' },
-  { zh: '特殊用法', en: 'Route of Administration' },
+  { zh: '單位', en: 'Unit' },
 ];
 // 不通过审核-原因说明
 const rejectReasonModalVisible = ref(false);
@@ -541,16 +520,14 @@ const confirmMedicinePrice = async () => {
 
       // 构建 medicines
       const medicines = medicinePriceList.value.map(item => ({
-        name: item.name,
-        spec: item.spec,
-        medicineCun: item.medicineCun,
-        price: item.price,
-        dosageForm: item.dosageForm,
-        frenquency: item.frenquency,
+        drugDetails: item.drugDetails,
+        uom: item.uom,
+        dosageDirections: item.dosageDirections,
         duration: item.duration,
-        directionsRoute: item.directionsRoute,
-        specialPurpose: item.specialPurpose,
-        medicineId: item.medicineId
+        unit: item.unit,
+        medicineCun: item.medicineCun,
+        medicineId: item.medicineId,
+        price: item.price,
       }))
 
       // 第二个接口
@@ -660,6 +637,9 @@ const userCaseList = ref([]);
 const activeCaseKey = ref([]);
 const fallbackImage = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgesAdwF3VP4LAAA=';
 const decryption = async (url) => {
+  if (!url || !url.toLowerCase().endsWith('.enc')) {
+    return url
+  }
   try {
     const res = await axios.get(
       'https://hqgy.gzxinxingyiyuan.com/filedec/file/desfile/download',

@@ -64,21 +64,20 @@
             <div style="font-weight: bold; margin-bottom: 8px;">已选药品详情填写</div>
             <div v-for="id in selectedIds" :key="id"
                 style="border: 1px solid #e8e8e8; border-radius: 4px; padding: 10px; margin-bottom: 10px;">
-                <!-- 药品名称 + 规格 -->
+                <!-- 药品信息 -->
                 <div style="font-size: 13px; color: #333; margin-bottom: 8px; font-weight: 500;">
-                    {{ getMedicineName(id) }}（规格：{{ getMedicineSpec(id) }}）
+                    英文名：{{ getMedicineField(id, 'enName') }} | 藥品名稱：{{ getMedicineField(id, 'name') }} | 規格：{{
+                        getMedicineField(id, 'spec') }} | 劑型：{{ getMedicineField(id, 'dosageForm') }} | 最小包裝：{{
+                        getMedicineField(id,
+                            'minPackage') }}
                 </div>
                 <!-- 额外字段行 -->
                 <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                    <MedicineFieldInput label="剂型" v-model="extraFields[id].dosageForm" placeholder="剂型"
+                    <MedicineFieldInput label="用法用量" v-model="extraFields[id].dosageDirections" placeholder="用法用量"
+                        width="180px" />
+                    <MedicineFieldInput label="持续时间" v-model="extraFields[id].duration" placeholder="持续时间"
                         width="100px" />
-                    <MedicineFieldInput label="频次" v-model="extraFields[id].frenquency" placeholder="频次"
-                        width="100px" />
-                    <MedicineFieldInput label="疗程" v-model="extraFields[id].duration" placeholder="疗程" width="100px" />
-                    <MedicineFieldInput label="用法/途径" v-model="extraFields[id].directionsRoute" placeholder="用法/途径"
-                        width="120px" />
-                    <MedicineFieldInput label="特殊用途" v-model="extraFields[id].specialPurpose" placeholder="特殊用途"
-                        width="120px" />
+                    <MedicineFieldInput label="单位" v-model="extraFields[id].unit" placeholder="单位" width="100px" />
                 </div>
             </div>
         </div>
@@ -94,9 +93,9 @@
                 style="border: 1px solid #d9d9d9; border-radius: 4px; padding: 10px; margin-bottom: 10px; background: #fafafa;">
                 <!-- 基本信息行 -->
                 <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
-                    <MedicineFieldInput label="藥物名稱" v-model="item.name" placeholder="藥物名稱" width="110px" />
-                    <MedicineFieldInput label="藥品規格" v-model="item.spec" placeholder="藥品規格" width="110px" />
-                    <MedicineFieldInput label="藥品分類" v-model="item.clazz" placeholder="藥品分類" width="110px" />
+                    <MedicineFieldInput width="280px" label="藥品詳情" v-model="item.drugDetails" :maxlength="200"
+                        placeholder="藥品名稱(品牌名)+成分+規格+劑型" />
+                    <MedicineFieldInput label="計量單位" v-model="item.uom" placeholder="計量單位" width="110px" />
                     <div style="display: flex; align-items: center; gap: 4px;">
                         <span style="white-space: nowrap; font-size: 12px; color: #666;">數量：</span>
                         <a-input-number v-model:value="item.medicineCun" :min="1" :max="999" placeholder="數量"
@@ -105,12 +104,9 @@
                 </div>
                 <!-- 详情字段行 -->
                 <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
-                    <MedicineFieldInput label="剂型" v-model="item.dosageForm" placeholder="剂型" width="100px" />
-                    <MedicineFieldInput label="频次" v-model="item.frenquency" placeholder="频次" width="100px" />
-                    <MedicineFieldInput label="疗程" v-model="item.duration" placeholder="疗程" width="100px" />
-                    <MedicineFieldInput label="用法/途径" v-model="item.directionsRoute" placeholder="用法/途径"
-                        width="120px" />
-                    <MedicineFieldInput label="特殊用途" v-model="item.specialPurpose" placeholder="特殊用途" width="110px" />
+                    <MedicineFieldInput label="單位" v-model="item.unit" placeholder="單位" width="100px" />
+                    <MedicineFieldInput label="持續時間" v-model="item.duration" placeholder="持續時間" width="100px" />
+                    <MedicineFieldInput label="用法用量" v-model="item.dosageDirections" placeholder="用法用量" width="180px" />
                     <a-button type="text" danger size="small" style="margin-left: auto;"
                         @click="emit('removeManual', index)">删除</a-button>
                 </div>
@@ -134,6 +130,7 @@ const props = defineProps({
     extraFields: { type: Object, default: () => ({}) },
     manualMedicines: { type: Array, default: () => [] },
     searchForm: { type: Object, default: () => ({ type: undefined, name: '' }) },
+    selectedMedicineCache: { type: Object, default: () => ({}) },
 });
 
 const emit = defineEmits([
@@ -167,15 +164,12 @@ const isIndeterminate = computed(() =>
     !isAllSelected.value
 );
 
-/** 根据 id 获取药品名称 */
-const getMedicineName = (id) => {
+/** 根据 id 获取药品字段（优先从缓存读取，避免翻页/搜索后数据丢失） */
+const getMedicineField = (id, field) => {
+    const cached = props.selectedMedicineCache[id];
+    if (cached && cached[field] != null) return cached[field];
     const item = props.medicineList.find((m) => m.id === id);
-    return item ? item.name : String(id);
-};
-
-/** 根据 id 获取药品规格 */
-const getMedicineSpec = (id) => {
-    const item = props.medicineList.find((m) => m.id === id);
-    return item ? (item.spec || '--') : '--';
+    const val = item ? item[field] : null;
+    return val != null ? val : '--';
 };
 </script>

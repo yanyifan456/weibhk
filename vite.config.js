@@ -62,7 +62,15 @@ export default defineConfig(({ mode }) => {
           target: env.VITE_FILE_URL,
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/filedec/, ""),
-        }
+        },
+        '/file': {
+          target: 'http://hqgy.gzxinxingyiyuan.com:8085',
+          changeOrigin: true,
+        },
+        '/orglogo': {
+          target: 'https://hqgy.gzxinxingyiyuan.com',
+          changeOrigin: true,
+        },
       },
     },
   };

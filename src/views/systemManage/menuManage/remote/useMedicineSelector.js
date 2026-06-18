@@ -10,7 +10,8 @@
  *   medicinePagination - 分页配置
  *   selectedIds        - 已选药品 ID 数组
  *   quantities         - 各药品数量 { [id]: number }
- *   extraFields        - 各药品额外字段 { [id]: { dosageForm, frenquency, duration, directionsRoute, specialPurpose } }
+ *   extraFields        - 各药品额外字段 { [id]: { dosageDirections, duration, unit } }
+ *   selectedMedicineCache - 已选药品的完整数据缓存，避免翻页/搜索后信息丢失 { [id]: 药品对象 }
  *   manualMedicines    - 手动新增药品列表
  *   fetchList          - 请求药品列表
  *   handleSearch       - 重置分页并搜索
@@ -52,7 +53,8 @@ export function useMedicineSelector() {
   // ===== 勾选状态 =====
   const selectedIds = ref([]); // 已选药品 ID
   const quantities = reactive({}); // { [id]: number }
-  const extraFields = reactive({}); // { [id]: { dosageForm, frenquency, duration, directionsRoute, specialPurpose } }
+  const extraFields = reactive({}); // { [id]: { dosageDirections, duration, unit } }
+  const selectedMedicineCache = reactive({}); // { [id]: 完整药品对象 } —— 缓存已选药品数据，避免翻页/搜索后数据丢失
 
   // ===== 手动新增药品 =====
   const manualMedicines = ref([]);
@@ -61,13 +63,15 @@ export function useMedicineSelector() {
   // 内部：确保 extraFields 中存在某 id 的记录
   // -----------------------------------------------
   const _ensureExtra = (id) => {
+    const item = medicineList.value.find((m) => m.id === id);
+    if (item) {
+      selectedMedicineCache[id] = { ...item };
+    }
     if (!extraFields[id]) {
       extraFields[id] = {
-        dosageForm: "",
-        frenquency: "",
+        dosageDirections: "",
         duration: "",
-        directionsRoute: "",
-        specialPurpose: "",
+        unit: item?.unit || "",
       };
     }
   };
@@ -153,15 +157,12 @@ export function useMedicineSelector() {
   const addManual = () => {
     manualMedicines.value.push({
       _key: ++_manualKey,
-      name: "",
-      spec: "",
-      clazz: "",
-      medicineCun: 1,
-      dosageForm: "",
-      frenquency: "",
+      drugDetails: "",
+      uom: "",
+      unit: "",
       duration: "",
-      directionsRoute: "",
-      specialPurpose: "",
+      dosageDirections: "",
+      medicineCun: 1,
     });
   };
 
@@ -184,6 +185,9 @@ export function useMedicineSelector() {
     medicineList.value = [];
     Object.keys(quantities).forEach((k) => delete quantities[k]);
     Object.keys(extraFields).forEach((k) => delete extraFields[k]);
+    Object.keys(selectedMedicineCache).forEach(
+      (k) => delete selectedMedicineCache[k],
+    );
     manualMedicines.value = [];
   };
 
@@ -237,25 +241,23 @@ export function useMedicineSelector() {
         if (!selectedIds.value.includes(id)) selectedIds.value.push(id);
         quantities[id] = med.medicineCun || 1;
         extraFields[id] = {
-          dosageForm: med.dosageForm || "",
-          frenquency: med.frenquency || "",
+          dosageDirections: med.dosageDirections || "",
           duration: med.duration || "",
-          directionsRoute: med.directionsRoute || "",
-          specialPurpose: med.specialPurpose || "",
+          unit: med.unit || "",
         };
+        // 缓存已选药品数据
+        const cached = baseList.find((m) => m.id === id);
+        if (cached) selectedMedicineCache[id] = { ...cached };
       } else {
         // 手动新增药品：直接追加到 manualMedicines
         manualMedicines.value.push({
           _key: ++_manualKey,
-          name: med.name || "",
-          spec: med.spec || "",
-          clazz: med.clazz || "",
-          medicineCun: med.medicineCun || 1,
-          dosageForm: med.dosageForm || "",
-          frenquency: med.frenquency || "",
+          drugDetails: med.drugDetails || "",
+          uom: med.uom || "",
+          unit: med.unit || "",
           duration: med.duration || "",
-          directionsRoute: med.directionsRoute || "",
-          specialPurpose: med.specialPurpose || "",
+          dosageDirections: med.dosageDirections || "",
+          medicineCun: med.medicineCun || 1,
         });
       }
     });
@@ -267,33 +269,33 @@ export function useMedicineSelector() {
   // -----------------------------------------------
   const buildMedicines = () => {
     const apiItems = selectedIds.value.map((id) => {
-      const item = medicineList.value.find((m) => m.id === id);
+      const item =
+        medicineList.value.find((m) => m.id === id) ||
+        selectedMedicineCache[id];
       const extra = extraFields[id] || {};
       return {
         medicineId: id,
         name: item ? item.name : "",
-        spec: item ? item.spec || "" : "",
+        drugDetails: item ? item.drugDetails : "",
+        uom: item ? item.spec || "" : "",
         medicineCun: quantities[id] || 1,
-        dosageForm: extra.dosageForm || "",
-        frenquency: extra.frenquency || "",
+        dosageDirections: extra.dosageDirections || "",
         duration: extra.duration || "",
-        directionsRoute: extra.directionsRoute || "",
-        specialPurpose: extra.specialPurpose || "",
+        unit: extra.unit || "",
         ID: item ? item.id : "",
+        uom: item ? item.uom || "" : "",
       };
     });
 
     const manualItems = manualMedicines.value.map((item) => ({
       medicineId: null,
-      name: item.name || "",
-      spec: item.spec || "",
-      clazz: item.clazz || "",
-      medicineCun: item.medicineCun || 1,
-      dosageForm: item.dosageForm || "",
-      frenquency: item.frenquency || "",
+      name: item.drugDetails || "",
+      drugDetails: item.drugDetails || "",
+      uom: item.uom || "",
+      unit: item.unit || "",
       duration: item.duration || "",
-      directionsRoute: item.directionsRoute || "",
-      specialPurpose: item.specialPurpose || "",
+      dosageDirections: item.dosageDirections || "",
+      medicineCun: item.medicineCun || 1,
     }));
 
     return [...apiItems, ...manualItems];
@@ -307,6 +309,7 @@ export function useMedicineSelector() {
     selectedIds,
     quantities,
     extraFields,
+    selectedMedicineCache,
     manualMedicines,
     // 方法
     fetchList,
